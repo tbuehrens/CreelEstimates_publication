@@ -514,17 +514,21 @@ estimates_bss <- list()
 for(ecg in names(inputs_bss)) {
   gc(verbose = T)
   
-  ecg_fit <- fit_bss(
-    bss_inputs_list = inputs_bss[[ecg]],
-    n_chain = 4,  
-    n_cores = 4,
-    n_iter = 200,
-    n_warmup = 100,
-    n_thin = 1,
-    adapt_delta = 0.8,
-    max_treedepth = 10,
-    init = "0"
-  )
+  if(!exists(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, ".rds")))){
+    ecg_fit <- fit_bss(
+      bss_inputs_list = inputs_bss[[ecg]],
+      n_chain = 4,  
+      n_cores = 4,
+      n_iter = 200,
+      n_warmup = 100,
+      n_thin = 1,
+      adapt_delta = 0.8,
+      max_treedepth = 10,
+      init = "0"
+    )
+  }else{
+    ecg_fit <- file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, ".rds"))
+  }
   
   ecg_keep <- list()
   

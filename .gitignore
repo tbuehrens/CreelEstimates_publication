@@ -48,3 +48,6 @@ vignettes/*.pdf
 
 #amy's old files
 /amy_results
+
+#all rds files
+*.rds
