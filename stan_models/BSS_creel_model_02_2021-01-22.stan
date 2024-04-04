@@ -171,8 +171,8 @@ model{
 			}
 		}
 		for(s in 1:S){
-			omega_C_0[g,s] ~ normal(0,value_normal_sigma_omega_C_0); 
-			omega_E_0[g,s] ~ normal(0,value_normal_sigma_omega_E_0); 
+			omega_C_0[g,s] ~ normal(0,sqrt(square(sigma_eps_C)/(1-square(phi_C)))); 
+			omega_E_0[g,s] ~ normal(0,sqrt(square(sigma_eps_E)/(1-square(phi_E)))); 
 	    eps_mu_C[g,s] ~ std_normal();
 			eps_mu_E[g,s] ~ std_normal();
       p_I[g,s] ~ beta(0.5,0.5); 
@@ -225,6 +225,15 @@ generated quantities{
 	Omega_E = multiply_lower_tri_self_transpose(Lcorr_E);
 	C_sum = 0;
 	E_sum = 0;
+	//PPD
+	int<lower=0>V_I_rep[V_n];
+  int<lower=0>T_I_rep[T_n];
+	int<lower=0>A_I_rep[A_n];
+	int<lower=0>E_s_rep[E_n];
+	int<lower=0>c_rep[IntC];
+	int<lower=0>V_A_rep[IntA];
+	int<lower=0>T_A_rep[IntA];
+	
 	for(g in 1:G){
 		for(d in 1:D){
 			for(s in 1:S){
@@ -236,18 +245,48 @@ generated quantities{
 			}							
 		}
 	}
+	//PPD
+	//Index effort counts - vehicles
+	for(i in 1:V_n){
+		V_I_rep[i] ~ poisson_rng((lambda_E_S_I[section_V[i],countnum_V[i]][day_V[i],1] * p_TI[1,section_V[i]] * R_V[1] +
+						 lambda_E_S_I[section_V[i],countnum_V[i]][day_V[i],2] * p_TI[2,section_V[i]] * R_V[2]) * b[1]);  //Note: leaving ratio of cars per angler and bias constant among days since was invariant!
+	}
+  //Index effort counts - trailers
+	for(i in 1:T_n){
+		T_I_rep[i] ~ poisson_rng((lambda_E_S_I[section_T[i],countnum_T[i]][day_T[i],1] * p_TI[1,section_T[i]] * R_T[1] +
+						 lambda_E_S_I[section_T[i],countnum_T[i]][day_T[i],2] * p_TI[2,section_T[i]] * R_T[2]) * b[2]); 
+	}
+  //Index effort counts - anglers
+	for(i in 1:A_n){ //KB edit
+		A_I_rep[i] ~ poisson_rng(lambda_E_S_I[section_A[i],countnum_A[i]][day_A[i],gear_A[i]] * p_TI[gear_A[i],section_A[i]] * p_I[gear_A[i],section_A[i]]);
+	}
+	//Census (tie-in) effort counts - anglers
+	for(e in 1:E_n){
+		E_s_rep[e] ~ poisson_rng(lambda_E_S_I[section_E[e],countnum_E[e]][day_E[e],gear_E[e]] * p_TI[gear_E[e],section_E[e]]);				
+	}
+	//Angler interviews - CPUE
+	for(a in 1:IntC){
+		c_rep[a] ~ neg_binomial_2_rng(lambda_C_S[section_IntC[a]][day_IntC[a], gear_IntC[a]] * h[a] , r_C);
+	}
+	//Angler interviews - Angler expansions
+	for(a in 1:IntA){
+		//vehicles
+		V_A_rep[a] ~ binomial_rng(A_A[a], R_V[gear_IntA[a]]);  //Note: leaving ratio of cars per angler constant among days since was invariant!
+		//trailers
+		T_A_rep[a] ~ binomial_rng(A_A[a], R_T[gear_IntA[a]]);  //Note: leaving ratio of cars per angler constant among days since was invariant!
+	}											
 	//point-wise log likelihood for LOO-IC
 	//Index effort counts - vehicles
 	for (i in 1:V_n){
 		log_lik[i] = poisson_lpmf(V_I[i]|(lambda_E_S_I[section_V[i],countnum_V[i]][day_V[i],1] * p_TI[1,section_V[i]] * R_V[1] +
 						 				  lambda_E_S_I[section_V[i],countnum_V[i]][day_V[i],2] * p_TI[2,section_V[i]] * R_V[2]) * b[1]);
 	}
-    //Index effort counts - trailers
+  //Index effort counts - trailers
 	for(i in 1:T_n){
 		log_lik[V_n +i] = poisson_lpmf(T_I[i]|(lambda_E_S_I[section_T[i],countnum_T[i]][day_T[i],1] * p_TI[1,section_T[i]] * R_T[1] +
 						 lambda_E_S_I[section_T[i],countnum_T[i]][day_T[i],2] * p_TI[2,section_T[i]] * R_T[2]) * b[2]); 
 	}
-    //Index effort counts - anglers
+  //Index effort counts - anglers
 	for(i in 1:A_n){
 		log_lik[V_n + T_n + i] = poisson_lpmf(A_I[i]|lambda_E_S_I[section_A[i],countnum_A[i]][day_A[i],gear_A[i]] * p_TI[gear_A[i],section_A[i]] * p_I[gear_A[i],section_A[i]]);
 	}
