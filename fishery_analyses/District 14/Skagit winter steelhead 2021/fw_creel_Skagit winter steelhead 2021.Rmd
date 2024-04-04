@@ -545,7 +545,9 @@ for(ecg in names(inputs_bss)) {
   # ecg_keep$catch_daily_draws <- ecg_fit |> tidybayes::spread_draws(C[s][d,g] | g) #a bit wider, bank/boat pivoted wide 
 
   estimates_bss[[ecg]] <- ecg_keep
-    
+  
+  saveRDS(ecg_fit,file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, ".rds")))
+  
   rm(ecg_fit, ecg_keep); gc()
 }
 
