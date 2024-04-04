@@ -12,7 +12,7 @@ fit_bss <- function(
     ...){
   
   if(!file.exists(here::here("stan_models/BSS_creel_model_02_2021-01-22.rds"))){
-    model<-stan_model(here::here("stan_models/BSS_creel_model_02_2021-01-22.stan"))
+    model<-rstan::stan_model(here::here("stan_models/BSS_creel_model_02_2021-01-22.stan"))
     saveRDS(model,here::here("stan_models/BSS_creel_model_02_2021-01-22.rds"))
   }else{
     model<-readRDS(here::here("stan_models/BSS_creel_model_02_2021-01-22.rds"))
