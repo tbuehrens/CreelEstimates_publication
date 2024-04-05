@@ -575,6 +575,7 @@ map_df(estimates_bss, ~.x$overview) |>
 
 ```
 
+
 ## plot probability density function of effort and catch 
 
 ```{r, eval=FALSE}
@@ -656,8 +657,6 @@ map_df(estimates_bss, ~.x$cpue_daily) |>
 ```
 
 
-
-
 # PE/BSS combined summary
 
 ```{r combo_overview, eval=FALSE}
@@ -736,4 +735,122 @@ if(nchar(params$output_location_filepath) > 1) {
 #   path = file.path(where("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_overview_", params$fishery_name, ".xlsx"))
 #   )
 # }
+```
+
+
+## Posterior Predictive Check for BSS
+```{r PPC, eval = FALSE}
+library(bayesplot)
+
+stan_fit<-readRDS(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, ".rds")))
+
+# Perform posterior predictive checks
+V_I_PPC<-as.data.frame(apply(extract(stan_fit)$V_I_rep,2, function(x) quantile(x, c(0.025,0.975))))%>%
+  rownames_to_column(var="Quantile")%>%
+  as_tibble()%>%
+  pivot_longer(names_to = "names",values_to = "V_I",cols = c(-Quantile))%>%
+  pivot_wider(names_from = Quantile,values_from = V_I)%>%
+  bind_cols(tibble(V_I=inputs_bss[[ecg]]$V_I,
+                   section=inputs_bss[[ecg]]$section_V,
+                   day = inputs_bss[[ecg]]$day_V,
+                   countnum = inputs_bss[[ecg]]$countnum_V
+                   )
+  )%>%
+  mutate(section = as.factor(section),
+         day = as.factor(day),
+         countnum = as.factor(countnum)
+         )
+
+
+ggplot(V_I_PPC, aes(x = V_I, y = V_I, color=section)) +
+  facet_grid(cols=vars(section)) +
+  geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0) +
+  labs(x = "Observed V_I", y = "95% PPI") +
+  geom_line(color="black") +
+  ylim(0, max(V_I_PPC$`97.5%`)) +
+  xlim(0, max(V_I_PPC$`97.5%`))
+
+
+T_I_PPC<-as.data.frame(apply(extract(stan_fit)$T_I_rep,2, function(x) quantile(x, c(0.025,0.975))))%>%
+  rownames_to_column(var="Quantile")%>%
+  as_tibble()%>%
+  pivot_longer(names_to = "names",values_to = "T_I",cols = c(-Quantile))%>%
+  pivot_wider(names_from = Quantile,values_from = T_I)%>%
+  bind_cols(tibble(T_I=inputs_bss[[ecg]]$T_I,
+                   section=inputs_bss[[ecg]]$section_T,
+                   day = inputs_bss[[ecg]]$day_T,
+                   countnum = inputs_bss[[ecg]]$countnum_T
+                   )
+  )%>%
+  mutate(section = as.factor(section),
+         day = as.factor(day),
+         countnum = as.factor(countnum)
+         )
+
+
+ggplot(T_I_PPC, aes(x = T_I, y = T_I, color=section)) +
+  facet_grid(cols=vars(section)) +
+  geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0) +
+  labs(x = "Observed T_I", y = "95% PPI") +
+  geom_line(color="black") +
+  ylim(0, max(T_I_PPC$`97.5%`)) +
+  xlim(0, max(T_I_PPC$`97.5%`))
+
+
+E_s_PPC<-as.data.frame(apply(extract(stan_fit)$E_s_rep,2, function(x) quantile(x, c(0.025,0.975))))%>%
+  rownames_to_column(var="Quantile")%>%
+  as_tibble()%>%
+  pivot_longer(names_to = "names",values_to = "E_s",cols = c(-Quantile))%>%
+  pivot_wider(names_from = Quantile,values_from = E_s)%>%
+  bind_cols(tibble(E_s=inputs_bss[[ecg]]$E_s,
+                   section=inputs_bss[[ecg]]$section_E,
+                   day = inputs_bss[[ecg]]$day_E,
+                   gear = inputs_bss[[ecg]]$gear_E,
+                   countnum = inputs_bss[[ecg]]$countnum_E
+                   )
+  )%>%
+  mutate(section = as.factor(section),
+         day = as.factor(day),
+         gear= as.factor(gear),
+         countnum = as.factor(countnum)
+         )
+
+
+ggplot(E_s_PPC, aes(x = E_s, y = E_s, color=section, groups=gear)) +
+  facet_grid(cols=vars(section),rows=vars(gear)) +
+  geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0) +
+  labs(x = "Observed E_s", y = "95% PPI") +
+  geom_line(color="black") +
+  ylim(0, max(E_s_PPC$`97.5%`)) +
+  xlim(0, max(E_s_PPC$`97.5%`))
+
+
+c_PPC<-as.data.frame(apply(extract(stan_fit)$c_rep,2, function(x) quantile(x, c(0.025,0.975))))%>%
+  rownames_to_column(var="Quantile")%>%
+  as_tibble()%>%
+  pivot_longer(names_to = "names",values_to = "c",cols = c(-Quantile))%>%
+  pivot_wider(names_from = Quantile,values_from = c)%>%
+  bind_cols(tibble(c=inputs_bss[[ecg]]$c,
+                   section=inputs_bss[[ecg]]$section_IntC,
+                   day = inputs_bss[[ecg]]$day_IntC,
+                   gear = inputs_bss[[ecg]]$gear_IntC,
+                   )
+  )%>%
+  mutate(section = as.factor(section),
+         day = as.factor(day),
+         gear= as.factor(gear),
+         fit = ifelse(c>=`2.5%` & c<=`97.5%`,"fit","no fit")
+         )
+
+
+ggplot(c_PPC, aes(x = c+1, y = c+1, color=factor(fit), groups=interaction(gear,section))) +
+  facet_grid(cols=vars(section),rows=vars(gear)) +
+  geom_errorbar(aes(ymin = `2.5%` + 1, ymax = `97.5%` + 1), width = 0,position = position_jitter(width = 0.1, height=0)) +
+  labs(x = "Observed E_s", y = "95% PPI") +
+  geom_line(color="black") +
+  scale_x_log10()+
+  scale_y_log10()
+  #ylim(1, max(c_PPC$`97.5%`)) +
+  #xlim(1, max(c_PPC$`97.5%`))
+
 ```
