@@ -205,14 +205,15 @@ model{
 	// for(a in 1:IntC){
 	// 	c[a] ~ neg_binomial_2(lambda_C_S[section_IntC[a]][day_IntC[a], gear_IntC[a]] * h[a] , r_C);
 	// }
-	for (a in 1:IntC) {
-    if (c[a] == 0)
-      target += 
-        log_sum_exp(bernoulli_lpmf(0 | pzero[gear_IntC[a],section_IntC[a]]), #probability 0 extra zero
-        bernoulli_lpmf(1 | pzero[gear_IntC[a],section_IntC[a]]) + neg_binomial_2_lpmf(lambda_C_S[section_IntC[a]][day_IntC[a], gear_IntC[a]] * h[a] , r_C); #probability of 0 but from the neg bim distribution (not extra)
-    else
-      target += 
-        bernoulli_lpmf(1 | pzero[gear_IntC[a],section_IntC[a]]) + neg_binomial_2_lpmf(lambda_C_S[section_IntC[a]][day_IntC[a], gear_IntC[a]] * h[a] , r_C); #probability of nonzero
+  for (a in 1:IntC) {
+    if (c[a] == 0) {
+      target += log_sum_exp(
+        bernoulli_lpmf(0 | pzero[gear_IntC[a], section_IntC[a]]), // probability 0 extra zero
+        bernoulli_lpmf(1 | pzero[gear_IntC[a], section_IntC[a]]) + neg_binomial_2_lpmf(0 | lambda_C_S[section_IntC[a]][day_IntC[a], gear_IntC[a]] * h[a], r_C) // probability of 0 but from the neg bim distribution (not extra)
+      );
+    } else {
+      target += bernoulli_lpmf(1 | pzero[gear_IntC[a], section_IntC[a]]) + neg_binomial_2_lpmf(c[a] | lambda_C_S[section_IntC[a]][day_IntC[a], gear_IntC[a]] * h[a], r_C); // probability of nonzero
+    }
   }
 	//Angler interviews - Angler expansions
 	for(a in 1:IntA){
@@ -241,7 +242,7 @@ generated quantities{
 	real<lower=0>A_I_rep[A_n];
 	real<lower=0>E_s_rep[E_n];
 	real<lower=0>c_rep[IntC];
-	real<lower=0>extra_0[IntC]
+	real<lower=0>extra_0[IntC];
 	real<lower=0>V_A_rep[IntA];
 	real<lower=0>T_A_rep[IntA];
 	
