@@ -249,7 +249,7 @@ generated quantities{
 	for(g in 1:G){
 		for(d in 1:D){
 			for(s in 1:S){
-				lambda_Ctot_S[s][d,g] = lambda_E_S[s][d,g] * L[d] * lambda_C_S[s][d,g]; 
+				lambda_Ctot_S[s][d,g] = lambda_E_S[s][d,g] * L[d] * lambda_C_S[s][d,g] * pzero[g,s]; 
 				C[s][d,g] = poisson_rng(lambda_Ctot_S[s][d,g]); 
 				C_sum = C_sum + C[s][d,g];
 				E[s][d,g] = lambda_E_S[s][d,g] * L[d]; 
