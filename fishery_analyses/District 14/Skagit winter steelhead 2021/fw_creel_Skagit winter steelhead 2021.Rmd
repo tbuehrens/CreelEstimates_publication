@@ -745,9 +745,9 @@ library(bayesplot)
 #stan_fit<-readRDS(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, ".rds")))
 #write.csv(summary(stan_fit)$summary,file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_summary_", params$fishery_name, ".csv")))
 
-stan_fit<-readRDS(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, "_ZINB.rds")))
-
-write.csv(summary(stan_fit)$summary,file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_summary_", params$fishery_name, "_ZINB.csv")))
+# stan_fit<-readRDS(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, "_ZINB.rds")))
+# 
+# write.csv(summary(stan_fit)$summary,file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_summary_", params$fishery_name, "_ZINB.csv")))
 
 # Perform posterior predictive checks
 V_I_PPC<-as.data.frame(apply(extract(stan_fit)$V_I_rep,2, function(x) quantile(x, c(0.025,0.975))))%>%
