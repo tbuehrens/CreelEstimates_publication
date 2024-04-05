@@ -743,7 +743,7 @@ if(nchar(params$output_location_filepath) > 1) {
 library(bayesplot)
 
 stan_fit<-readRDS(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, ".rds")))
-
+write.csv(summary(stan_fit)$summary,"summary_delete.csv")
 # Perform posterior predictive checks
 V_I_PPC<-as.data.frame(apply(extract(stan_fit)$V_I_rep,2, function(x) quantile(x, c(0.025,0.975))))%>%
   rownames_to_column(var="Quantile")%>%
@@ -758,8 +758,19 @@ V_I_PPC<-as.data.frame(apply(extract(stan_fit)$V_I_rep,2, function(x) quantile(x
   )%>%
   mutate(section = as.factor(section),
          day = as.factor(day),
-         countnum = as.factor(countnum)
+         countnum = as.factor(countnum),
+         fit = factor(ifelse(V_I>=`2.5%` & V_I<=`97.5%`,"fit","no fit"))
          )
+
+V_I_PPC %>%
+  group_by(section) %>%
+  summarise(
+    fit_count = sum(fit == "fit"),
+    no_fit_count = sum(fit == "no fit"),
+    total_count = fit_count + no_fit_count,
+    bayes_p = ifelse(no_fit_count == 0, 1, fit_count / total_count)
+  ) %>%
+  ungroup()
 
 
 ggplot(V_I_PPC, aes(x = V_I, y = V_I, color=section)) +
@@ -784,8 +795,19 @@ T_I_PPC<-as.data.frame(apply(extract(stan_fit)$T_I_rep,2, function(x) quantile(x
   )%>%
   mutate(section = as.factor(section),
          day = as.factor(day),
-         countnum = as.factor(countnum)
+         countnum = as.factor(countnum),
+         fit = factor(ifelse(T_I>=`2.5%` & T_I<=`97.5%`,"fit","no fit"))
          )
+
+T_I_PPC %>%
+  group_by(section) %>%
+  summarise(
+    fit_count = sum(fit == "fit"),
+    no_fit_count = sum(fit == "no fit"),
+    total_count = fit_count + no_fit_count,
+    bayes_p = ifelse(no_fit_count == 0, 1, fit_count / total_count)
+  ) %>%
+  ungroup()
 
 
 ggplot(T_I_PPC, aes(x = T_I, y = T_I, color=section)) +
@@ -812,8 +834,20 @@ E_s_PPC<-as.data.frame(apply(extract(stan_fit)$E_s_rep,2, function(x) quantile(x
   mutate(section = as.factor(section),
          day = as.factor(day),
          gear= as.factor(gear),
-         countnum = as.factor(countnum)
+         countnum = as.factor(countnum),
+         fit = factor(ifelse(E_s>=`2.5%` & E_s<=`97.5%`,"fit","no fit"))
          )
+
+E_s_PPC %>%
+  group_by(section, gear) %>%
+  summarise(
+    fit_count = sum(fit == "fit"),
+    no_fit_count = sum(fit == "no fit"),
+    total_count = fit_count + no_fit_count,
+    bayes_p = ifelse(no_fit_count == 0, 1, fit_count / total_count)
+  ) %>%
+  ungroup()
+
 
 
 ggplot(E_s_PPC, aes(x = E_s, y = E_s, color=section, groups=gear)) +
@@ -842,6 +876,14 @@ c_PPC<-as.data.frame(apply(extract(stan_fit)$c_rep,2, function(x) quantile(x, c(
          fit = ifelse(c>=`2.5%` & c<=`97.5%`,"fit","no fit")
          )
 
+c_PPC%>%
+  group_by(section,gear,fit)%>%
+  summarise(n=n())%>%
+  pivot_wider(values_from = n,names_from = fit)%>%
+  ungroup()%>%
+  mutate(bayes_p = fit/(fit + `no fit`))
+
+
 
 ggplot(c_PPC, aes(x = c+1, y = c+1, color=factor(fit), groups=interaction(gear,section))) +
   facet_grid(cols=vars(section),rows=vars(gear)) +
@@ -852,5 +894,72 @@ ggplot(c_PPC, aes(x = c+1, y = c+1, color=factor(fit), groups=interaction(gear,s
   scale_y_log10()
   #ylim(1, max(c_PPC$`97.5%`)) +
   #xlim(1, max(c_PPC$`97.5%`))
+
+
+
+V_A_PPC<-as.data.frame(apply(extract(stan_fit)$V_A_rep,2, function(x) quantile(x, c(0.025,0.975))))%>%
+  rownames_to_column(var="Quantile")%>%
+  as_tibble()%>%
+  pivot_longer(names_to = "names",values_to = "V_A",cols = c(-Quantile))%>%
+  pivot_wider(names_from = Quantile,values_from = V_A)%>%
+  bind_cols(tibble(V_A=inputs_bss[[ecg]]$V_A,
+                   gear = inputs_bss[[ecg]]$gear_IntA
+                   )
+  )%>%
+  mutate(gear= as.factor(gear),
+         fit = factor(ifelse(V_A>=`2.5%` & V_A<=`97.5%`,"fit","no fit"))
+         )
+
+V_A_PPC %>%
+  group_by(gear) %>%
+  summarise(
+    fit_count = sum(fit == "fit"),
+    no_fit_count = sum(fit == "no fit"),
+    total_count = fit_count + no_fit_count,
+    bayes_p = ifelse(no_fit_count == 0, 1, fit_count / total_count)
+  ) %>%
+  ungroup()
+
+
+ggplot(V_A_PPC, aes(x = V_A, y = V_A,colors=gear)) +
+  facet_grid(cols=vars(gear)) +
+  geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0) +
+  labs(x = "Observed E_s", y = "95% PPI") +
+  geom_line(color="black") +
+  ylim(0, max(V_A_PPC$`97.5%`)) +
+  xlim(0, max(V_A_PPC$`97.5%`))
+
+
+T_A_PPC<-as.data.frame(apply(extract(stan_fit)$T_A_rep,2, function(x) quantile(x, c(0.025,0.975))))%>%
+  rownames_to_column(var="Quantile")%>%
+  as_tibble()%>%
+  pivot_longer(names_to = "names",values_to = "T_A",cols = c(-Quantile))%>%
+  pivot_wider(names_from = Quantile,values_from = T_A)%>%
+  bind_cols(tibble(T_A=inputs_bss[[ecg]]$T_A,
+                   gear = inputs_bss[[ecg]]$gear_IntA
+                   )
+  )%>%
+  mutate(gear= as.factor(gear),
+         fit = factor(ifelse(T_A>=`2.5%` & T_A<=`97.5%`,"fit","no fit"))
+         )
+
+T_A_PPC %>%
+  group_by(gear) %>%
+  summarise(
+    fit_count = sum(fit == "fit"),
+    no_fit_count = sum(fit == "no fit"),
+    total_count = fit_count + no_fit_count,
+    bayes_p = ifelse(no_fit_count == 0, 1, fit_count / total_count)
+  ) %>%
+  ungroup()
+
+
+ggplot(T_A_PPC, aes(x = T_A, y = T_A,colors=gear)) +
+  facet_grid(cols=vars(gear)) +
+  geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0) +
+  labs(x = "Observed E_s", y = "95% PPI") +
+  geom_line(color="black") +
+  ylim(0, max(T_A_PPC$`97.5%`)) +
+  xlim(0, max(T_A_PPC$`97.5%`))
 
 ```
