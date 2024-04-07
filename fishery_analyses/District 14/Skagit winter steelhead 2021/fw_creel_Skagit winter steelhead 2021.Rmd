@@ -1076,172 +1076,175 @@ bayes_p%>%
                 )%>%
   #kableExtra::kbl()%>%
   #kableExtra::kable_classic(font="Times New Roman")%>%
-  write.csv(file.path(here("fishery_analyses", params$project_name, params$fishery_name), "Bayes_p.csv"))
+  write.csv(file.path(here("fishery_analyses", params$project_name, params$fishery_name), "Bayes_p.csv"),row.names=F)
 
 
 ```
 
 
-<!-- ## Pre-season Fishery Planning -->
-<!-- This section displays the pre-season Skagit wild winter steelhead run-size forecast, the exploitation rate matrix prescribed by the Resource Management Plan, and uses the two to calculate the allowable harvest. It then compares the planned harvest (sport fishery catch * assumed catch and release mortality rate) with the allowable harvest to estimate the percent of the allowable harvest the sport fishery will use as well as the probability that the sport fishery will exceed various percentages of the allowable impacts. -->
+## Pre-season Fishery Planning
+This section displays the pre-season Skagit wild winter steelhead run-size forecast, the exploitation rate matrix prescribed by the Resource Management Plan, and uses the two to calculate the allowable harvest. It then compares the planned harvest (sport fishery catch * assumed catch and release mortality rate) with the allowable harvest to estimate the percent of the allowable harvest the sport fishery will use as well as the probability that the sport fishery will exceed various percentages of the allowable impacts.
 
-<!-- First, the allowable harvest rates in the RMP are: -->
-<!-- ```{r message = FALSE, warning = FALSE,results = "asis",include=TRUE, echo=FALSE} -->
-<!-- hcr<-read_csv(file.path("data","hcr.csv")) -->
-<!-- hcr%>%mutate(MaxRunsize=format(MaxRunsize, scientific = FALSE))%>% -->
-<!--   rename(`Exploitation Rate` = ER, `Minimum Run Size` = MinRunsize,`Maximum Run Size` = MaxRunsize)%>% -->
-<!--   kbl(caption = "Table 1. Allowable Harvest Rates, Skagit RMP ",digits =3)%>% -->
-<!--   kable_classic(full_width = F, html_font = "Cambria") -->
-<!-- ``` -->
+First, the allowable harvest rates in the RMP are:
+```{r message = FALSE, warning = FALSE,results = "asis",include=TRUE, echo=FALSE}
+hcr<-read_csv(file.path(here("fishery_analyses", params$project_name, params$fishery_name),"hcr.csv"))
+hcr%>%mutate(MaxRunsize=format(MaxRunsize, scientific = FALSE))%>%
+  rename(`Exploitation Rate` = ER, `Minimum Run Size` = MinRunsize,`Maximum Run Size` = MaxRunsize)%>%
+  kableExtra::kbl(caption = "Table 1. Allowable Harvest Rates, Skagit RMP ",digits =3)%>%
+  kableExtra::kable_classic(full_width = F, html_font = "Cambria")
+```
 
-<!-- The run size forecast is below, and is reprinted from the co-manager agreed-to [**pre-season forecast**](https://github.com/tbuehrens/Skagit-River-Steelhead-Forecast/blob/master/analysis/App_2_Model_fitting_forecast_2020_2021_step_head_fcst.pdf). A published scientific paper describing the methods may be found here: [**(preseason forecast publication)**](https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/1365-2664.13789).  -->
+The run size forecast is below, and is reprinted from the co-manager agreed-to [**pre-season forecast**](https://github.com/tbuehrens/Skagit-River-Steelhead-Forecast/blob/master/analysis/App_2_Model_fitting_forecast_2020_2021_step_head_fcst.pdf). A published scientific paper describing the methods may be found here: [**(preseason forecast publication)**](https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/1365-2664.13789).
 
-<!-- For more details on how this forecast was developed, see this [**GitHub repository**](https://github.com/casruff/Skagit-River-Steelhead-Forecast), which is collaboratively maintained by tribal Co-Managers & WDFW. -->
+For more details on how this forecast was developed, see this [**GitHub repository**](https://github.com/casruff/Skagit-River-Steelhead-Forecast), which is collaboratively maintained by tribal Co-Managers & WDFW.
 
-<!-- ```{r include=TRUE, fig.align="center", fig.cap=c("Figure 1. Skagit Steelhead Run-size Forecast. The forecast is shown as a 'bell curve' (though not symmetric), where the height of the curve is proportional to the probability that the true value (catch or effort) is equal to a particular value on the x-axis. The 'best' value is the 50th percentile, shown as a dashed line."),echo=FALSE} -->
-<!-- runsize<-read_csv("https://raw.github.com/tbuehrens/Skagit-River-Steelhead-Forecast/master/analysis/cache/ensemble_forecast_posterior.csv") -->
-<!-- ggplot(data=runsize,aes(x=ensemble_forecast_posterior))+ -->
-<!--   geom_density(fill="forest green")+ -->
-<!--   geom_vline(data=runsize,mapping=aes(xintercept=median(ensemble_forecast_posterior)),linetype="dashed")+ -->
-<!--   xlab("Forecasted Run-Size")+ -->
-<!--   theme_bw() -->
-<!-- runsize%>% -->
-<!--   summarise(`Run Size` = round(quantile(ensemble_forecast_posterior, c(0.025, 0.25, 0.5,0.75, 0.975))), q = c(0.025,0.25, 0.5,0.75, 0.975)*100)%>% -->
-<!--   dplyr::rename(Percentile=q)%>% -->
-<!--   kbl(caption = "Table 2. Runsize Forecast. The 'best' estimate is the median or 50th percentile. The table shows the forecast percentiles, which represent the probability that the true run-size will fall below a particular value. For example, there is a 50% probability the true run size will be below the 50th percentile of the forecast.",digits =3,format = "html", table.attr = "style='width:40%;'")%>% -->
-<!--   kable_classic(html_font = "Cambria") -->
-<!-- ``` -->
+```{r include=TRUE, fig.align="center", fig.cap=c("Figure 1. Skagit Steelhead Run-size Forecast. The forecast is shown as a 'bell curve' (though not symmetric), where the height of the curve is proportional to the probability that the true value (catch or effort) is equal to a particular value on the x-axis. The 'best' value is the 50th percentile, shown as a dashed line."),echo=FALSE}
+runsize<-read_csv("https://raw.github.com/tbuehrens/Skagit-River-Steelhead-Forecast/master/analysis/cache/ensemble_forecast_posterior.csv")
+ggplot(data=runsize,aes(x=ensemble_forecast_posterior))+
+  geom_density(fill="forest green")+
+  geom_vline(data=runsize,mapping=aes(xintercept=median(ensemble_forecast_posterior)),linetype="dashed")+
+  xlab("Forecasted Run-Size")+
+  theme_bw()
 
-<!-- ### Fishery Impacts Relative to Resource Management Plan Limits: Preseason Plan -->
-<!-- Below you will find a comparison of the the planned sport fishery catch, assuming 10 percent catch and release mortality, with the allowable harvest based on the run size forecast and the RMP mortality limits. -->
+runsize%>%
+  summarise(`Run Size` = round(quantile(ensemble_forecast_posterior, c(0.025, 0.25, 0.5,0.75, 0.975))), q = c(0.025,0.25, 0.5,0.75, 0.975)*100)%>%
+  dplyr::rename(Percentile=q)%>%
+  kableExtra::kbl(caption = "Table 2. Runsize Forecast. The 'best' estimate is the median or 50th percentile. The table shows the forecast percentiles, which represent the probability that the true run-size will fall below a particular value. For example, there is a 50% probability the true run size will be below the 50th percentile of the forecast.",digits =3,format = "html", table.attr = "style='width:40%;'")%>%
+  kableExtra::kable_classic(html_font = "Cambria")
+```
 
-<!-- The allowable harvest, according to the RMP, is the number of fish that may be killed by the combined sport and tribal fisheries. However, as seen above, this number depends on the run-size, which fishery managers will not know until after the fishing season when they estimate escapement. However, based on the pre-season forecast run size, we can estimate what the true allowable harvest will be by combining the forecast run size, including its uncertainty, with the harvest rate matrix prescribed by the RMP. We can then plot the probability that the true allowable harvest will exceed a range of values. The true allowable harvest will be known with more certainty after the season when the actual run-size is known and the appropriate harvest rate from the matrix can be multiplied by the actual run size. -->
+### Fishery Impacts Relative to Resource Management Plan Limits: Preseason Plan
+Below you will find a comparison of the the planned sport fishery catch, assuming 10 percent catch and release mortality, with the allowable harvest based on the run size forecast and the RMP mortality limits.
 
-<!-- For example, in 2021 there is a greater than 90 percent chance that the true allowable harvest based on the true run size and the harvest matrix, will exceed 100 fish. There is a 50% chance that the allowable harvest will exceed 430 fish (10 percent of the best estimate of the run-size from the forecast), and a very small chance the allowable harvest will be greater than 2,000 fish: -->
-<!-- ```{r include=TRUE, fig.align="center", fig.cap=c("Figure 2. Probability that the allowable harvest exceeds a particular number of fish based on the RMP. Note the log10 scale on the x-axis."),echo=FALSE} -->
-<!-- ER_func<-function(hcr,runsize){ -->
-<!--   ER<-c(NULL) -->
-<!--   indexes<-c(NULL) -->
-<!--   for(i in 1:nrow(hcr)){ -->
-<!--     runsize=round(runsize) -->
-<!--     min<-hcr$MinRunsize[i] -->
-<!--     max<-hcr$MaxRunsize[i] -->
-<!--     ind<-which(min <= runsize & runsize <= max) -->
-<!--     indexes<-c(indexes,ind) -->
-<!--     ER<-c(ER,rep(hcr$ER[i],length(ind))) -->
-<!--     ERdat<-data.frame(indexes,ER) -->
-<!--   } -->
-<!--  return(ERdat) -->
-<!-- } -->
-<!-- ER<-ER_func(hcr=hcr,runsize=runsize) -->
-<!-- AH<-data.frame(ER$ER,runsize) -->
-<!-- AH$AH<-AH$ER.ER*AH$ensemble_forecast_posterior -->
-<!-- AH$Exceedence<-rev(sort(percent_rank(AH$AH))) -->
-<!-- #hist(AH$AH,breaks=seq(0,max(AH$AH)*1.1,100)) -->
+The allowable harvest, according to the RMP, is the number of fish that may be killed by the combined sport and tribal fisheries. However, as seen above, this number depends on the run-size, which fishery managers will not know until after the fishing season when they estimate escapement. However, based on the pre-season forecast run size, we can estimate what the true allowable harvest will be by combining the forecast run size, including its uncertainty, with the harvest rate matrix prescribed by the RMP. We can then plot the probability that the true allowable harvest will exceed a range of values. The true allowable harvest will be known with more certainty after the season when the actual run-size is known and the appropriate harvest rate from the matrix can be multiplied by the actual run size.
 
-<!-- breaks <- 10^(-10:10) -->
-<!-- minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9)) -->
-<!-- ggplot(data=AH,aes(x=AH,y=Exceedence))+ -->
-<!--   geom_line(size=1.25)+ -->
-<!--   theme_bw()+ -->
-<!--   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks)+ -->
-<!--   annotation_logticks(base = 10,sides = "b")+ -->
-<!--   coord_equal() + -->
-<!--   ylab("Probability of Exceedance")+ -->
-<!--   xlab("Allowable (State + Tribal) Co-manager Harvest (fish)") -->
-<!-- ``` -->
+For example, in 2021 there is a greater than 90 percent chance that the true allowable harvest based on the true run size and the harvest matrix, will exceed 100 fish. There is a 50% chance that the allowable harvest will exceed 430 fish (10 percent of the best estimate of the run-size from the forecast), and a very small chance the allowable harvest will be greater than 2,000 fish:
+```{r include=TRUE, fig.align="center", fig.cap=c("Figure 2. Probability that the allowable harvest exceeds a particular number of fish based on the RMP. Note the log10 scale on the x-axis."),echo=FALSE}
+ER_func<-function(hcr,runsize){
+  ER<-c(NULL)
+  indexes<-c(NULL)
+  for(i in 1:nrow(hcr)){
+    runsize=round(runsize)
+    min<-hcr$MinRunsize[i]
+    max<-hcr$MaxRunsize[i]
+    ind<-which(min <= runsize & runsize <= max)
+    indexes<-c(indexes,ind)
+    ER<-c(ER,rep(hcr$ER[i],length(ind)))
+    ERdat<-data.frame(indexes,ER)
+  }
+ return(ERdat)
+}
+ER<-ER_func(hcr=hcr,runsize=runsize)
+AH<-data.frame(ER$ER,runsize)
+AH$AH<-AH$ER.ER*AH$ensemble_forecast_posterior
+AH$Exceedence<-rev(sort(percent_rank(AH$AH)))
+#hist(AH$AH,breaks=seq(0,max(AH$AH)*1.1,100))
 
-<!-- Given the uncertainty in what the allowable harvest will turn out to be, managers must balance the risk of exceeding the allowable harvest with the cost of erring so heavily on the side of conservation (to ensure the allowable harvest is not exceeded) that no fishery is allowed at all. To assist with this task, managers can plan a fishery to harvest a particular number of fish (which itself may be estimated with uncertainty) and then calculate the probability that the allowable harvest will turn out to have been exceeded if the planned fishery is implemented. -->
+breaks <- 10^(-10:10)
+minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
+ggplot(data=AH,aes(x=AH,y=Exceedence))+
+  geom_line(size=1.25)+
+  theme_bw()+
+  scale_x_log10(breaks = breaks, minor_breaks = minor_breaks)+
+  annotation_logticks(base = 10,sides = "b")+
+  coord_equal() +
+  ylab("Probability of Exceedance")+
+  xlab("Allowable (State + Tribal) Co-manager Harvest (fish)")
+```
 
-<!-- For example, in 2021, a four-day a week fishery was planned with a projected total harvest of 76 fish (760 wild fish handled * assumed 10 percent catch and release mortality rate). If the actual catch matches the projection exactly, this would translate to 18 percent of the allowable (sport and tribal) harvest under the RMP if the true allowable harvest is 430 (which is the best estimate from the preseason forecast, and corresponds to the 50% exceedance probability).  -->
+Given the uncertainty in what the allowable harvest will turn out to be, managers must balance the risk of exceeding the allowable harvest with the cost of erring so heavily on the side of conservation (to ensure the allowable harvest is not exceeded) that no fishery is allowed at all. To assist with this task, managers can plan a fishery to harvest a particular number of fish (which itself may be estimated with uncertainty) and then calculate the probability that the allowable harvest will turn out to have been exceeded if the planned fishery is implemented.
 
-<!-- ```{r include=TRUE, fig.align="center", fig.cap=c("Figure 3. Probability that the pre-season planned sport fishery harvest exceeds the allowable harvest (expressed as percentages) under the RMP. Vertical lines denote 50 percent of the allowable harvest, which is shared between the state and tribes, and 100 percent of the allowable harvest. The best estimate of the percent of the allowable harvest that will be used by the sport fishery is located on the graph where the probability of exceedance is 50 percent."),echo=FALSE} -->
-<!-- preseason_planned_mortalities<-76 -->
-<!-- H_plan<-rlnorm(1000,log(preseason_planned_mortalities),0.1) -->
-<!-- PAH_plan<-(sample(H_plan,10000,replace = T)/sample(AH$AH,10000,replace = T))*100 -->
-<!-- PAHdat_plan<-data.frame(PAH_plan,percent_rank(-PAH_plan))%>%rename(Exceedence="percent_rank..PAH_plan.") -->
-<!-- ggplot(data=PAHdat_plan,aes(x=PAH_plan,y=Exceedence))+ -->
-<!--   geom_line(size=1.25)+ -->
-<!--   theme_bw()+ -->
-<!--   ylab("Probability of Exceedance")+ -->
-<!--   xlab("% of Allowable (Sport + Tribal) Co-Manager Harvest")+ -->
-<!--   geom_vline(xintercept=50)+ -->
-<!--   geom_vline(xintercept=100,col="red") -->
-<!-- ``` -->
-<!-- ```{r include=TRUE, fig.align="center", fig.cap=c("Figure 4. Pre-season Planned Probability that the sport fishery harvest exceeds 50 and 100 percent of the allowable harvest under the RMP, as well as the best estimate of the percentage of allowable impacts the sport fishery will use"),echo=FALSE} -->
-<!-- probs<-c(PAHdat_plan$PAH_plan[which(abs(PAHdat_plan$Exceedence - 0.5)==min(abs(PAHdat_plan$Exceedence - 0.5)))], -->
-<!--   PAHdat_plan$Exceedence[which(abs(PAHdat_plan$PAH - 50)==min(abs(PAHdat_plan$PAH - 50)))]*100, -->
-<!--   PAHdat_plan$Exceedence[which(abs(PAHdat_plan$PAH - 100)==min(abs(PAHdat_plan$PAH - 100)))]*100 -->
-<!--   ) -->
-<!-- par(mar=c(5,15,5,5)) -->
-<!-- names(probs)<-c("best estimate of sport \nfishery impacts as \n % of total (sport + tribal) \n allowable","probability sport fishery \n impacts > 50% of total \n (sport + tribal) allowable","probability sport fishery \n impacts > 100% of total \n (sport + tribal) allowable") -->
-<!-- barplot(probs,horiz = T,xlim=c(0,100),las=2,yaxs="i",col="forest green",main="Pre-season Plan" -->
-<!--         ) -->
-<!-- box() -->
-<!-- ``` -->
+For example, in 2021, a four-day a week fishery was planned with a projected total harvest of 76 fish (760 wild fish handled * assumed 10 percent catch and release mortality rate). If the actual catch matches the projection exactly, this would translate to 18 percent of the allowable (sport and tribal) harvest under the RMP if the true allowable harvest is 430 (which is the best estimate from the preseason forecast, and corresponds to the 50% exceedance probability).
 
-<!-- ## In-season Fishery Results -->
+```{r include=TRUE, fig.align="center", fig.cap=c("Figure 3. Probability that the pre-season planned sport fishery harvest exceeds the allowable harvest (expressed as percentages) under the RMP. Vertical lines denote 50 percent of the allowable harvest, which is shared between the state and tribes, and 100 percent of the allowable harvest. The best estimate of the percent of the allowable harvest that will be used by the sport fishery is located on the graph where the probability of exceedance is 50 percent."),echo=FALSE}
+preseason_planned_mortalities<-76
+H_plan<-rlnorm(1000,log(preseason_planned_mortalities),0.1)
+PAH_plan<-(sample(H_plan,10000,replace = T)/sample(AH$AH,10000,replace = T))*100
+PAHdat_plan<-data.frame(PAH_plan,percent_rank(-PAH_plan))%>%rename(Exceedence="percent_rank..PAH_plan.")
+ggplot(data=PAHdat_plan,aes(x=PAH_plan,y=Exceedence))+
+  geom_line(size=1.25)+
+  theme_bw()+
+  ylab("Probability of Exceedance")+
+  xlab("% of Allowable (Sport + Tribal) Co-Manager Harvest")+
+  geom_vline(xintercept=50)+
+  geom_vline(xintercept=100,col="red")
+```
+```{r include=TRUE, fig.align="center", fig.cap=c("Figure 4. Pre-season Planned Probability that the sport fishery harvest exceeds 50 and 100 percent of the allowable harvest under the RMP, as well as the best estimate of the percentage of allowable impacts the sport fishery will use"),echo=FALSE}
+probs<-c(PAHdat_plan$PAH_plan[which(abs(PAHdat_plan$Exceedence - 0.5)==min(abs(PAHdat_plan$Exceedence - 0.5)))],
+  PAHdat_plan$Exceedence[which(abs(PAHdat_plan$PAH - 50)==min(abs(PAHdat_plan$PAH - 50)))]*100,
+  PAHdat_plan$Exceedence[which(abs(PAHdat_plan$PAH - 100)==min(abs(PAHdat_plan$PAH - 100)))]*100
+  )
+par(mar=c(5,15,5,5))
+names(probs)<-c("best estimate of sport \nfishery impacts as \n % of total (sport + tribal) \n allowable","probability sport fishery \n impacts > 50% of total \n (sport + tribal) allowable","probability sport fishery \n impacts > 100% of total \n (sport + tribal) allowable")
+barplot(probs,horiz = T,xlim=c(0,100),las=2,yaxs="i",col="forest green",main="Pre-season Plan"
+        )
+box()
+```
 
-<!-- WDFW fishery managers use data from creel surveys to estimate the season total and daily catch and effort, and the daily catch per unit effort (CPUE). Results presented below include data collected through: **`r format(as.Date(all.Dates$Date[nrow(all.Dates)]), '%m/%d/%Y')`** -->
+## In-season Fishery Results
 
-<!-- ### Disclaimer -->
-<!-- Contents on this page should be treated as preliminary and are subject to change. While every effort has been made to ensure the accuracy of data and modeling here, some numbers may change. Particularly in-season catch and effort estimates may change as additional data becomes available, and as data errors are corrected. -->
+WDFW fishery managers use data from creel surveys to estimate the season total and daily catch and effort, and the daily catch per unit effort (CPUE). Results presented below include data collected through: **`r format(as.Date(all.Dates$Date[nrow(all.Dates)]), '%m/%d/%Y')`**
 
-<!-- ### Season Total Effort and Catch  -->
+### Disclaimer
+Contents on this page should be treated as preliminary and are subject to change. While every effort has been made to ensure the accuracy of data and modeling here, some numbers may change. Particularly in-season catch and effort estimates may change as additional data becomes available, and as data errors are corrected.
 
-<!-- This table and the figures below it show estimates of the season total catch and effort. Estimates are shown as 'bell curves' (though not symmetric), where the height of the curve is proportional to the probability that the true value (catch or effort) is equal to a particular value on the x-axis. The "best" estimate is the 50th percentile (median) in the table, and is denoted by the middle dashed line in the graphs: -->
-<!-- ```{r run_resid_analysis, message = FALSE, warning = FALSE,results = "asis",include=TRUE, echo=FALSE} -->
-<!-- results<-read_csv(file.path("results",catch.group.of.interest,paste0("Run_",Model_Run),"summarized_estimates",paste("Summary_Total_Catch_and_Effort",catch.group.of.interest,paste0("Run_",Model_Run),".csv",sep="_")))%>% -->
-<!--   dplyr::rename(Variable=X1)%>% -->
-<!--   dplyr::select(-CV)%>% -->
-<!--   #::rename(`CV (%)` = CV)%>% -->
-<!--   #mutate(`CV (%)`=`CV (%)`* 100)%>% -->
-<!--   kbl(caption = "Table 3. Total Catch (fish) and Effort (hours). The 'best' estimate is the median or 50th percentile. The table shows the percentiles of estimated catch and effort, which represent the probability that the true catch or effort is below a particular value. For example, there is a 50% probability the true catch is below the 50th percentile of the estimated catch in this table.",digits =1)%>% -->
-<!--   kable_classic(full_width = F, html_font = "Cambria") -->
-<!-- print(results) -->
-<!-- ``` -->
+### Season Total Effort and Catch
+
+This table and the figures below it show estimates of the season total catch and effort. Estimates are shown as 'bell curves' (though not symmetric), where the height of the curve is proportional to the probability that the true value (catch or effort) is equal to a particular value on the x-axis. The "best" estimate is the 50th percentile (median) in the table, and is denoted by the middle dashed line in the graphs:
+```{r run_resid_analysis, message = FALSE, warning = FALSE,results = "asis",include=TRUE, echo=FALSE}
+estimates_bss %>%
+  map_df(~ .x$overview) %>%
+  kableExtra::kbl(caption = "Table 3. Total Catch (fish) and Effort (hours). The 'best' estimate is the median or 50th percentile. The table shows the percentiles of estimated catch and effort, which represent the probability that the true catch or effort is below a particular value. For example, there is a 50% probability the true catch is below the 50th percentile of the estimated catch in this table.", digits = 1) %>%
+  kableExtra::kable_classic(full_width = FALSE, html_font = "Cambria")
+```
 
 
-<!-- ```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 5. Season total catch (fish) and effort (angler hours). The middle dashed line shows the posterior median or 'best' estimate. Outer dashed lines show 95 percent credible intervals."),echo=FALSE,warning = FALSE} -->
-<!-- season_results<-data.frame(res$C_sum,res$E_sum)%>% -->
-<!--   mutate(iter=row_number())%>% -->
-<!--   rename(`Season Total Catch`=res.C_sum,`Season Total Effort`=res.E_sum)%>% -->
-<!--   pivot_longer(names_to = "Parameter",values_to="value",cols=c(`Season Total Catch`,`Season Total Effort`)) -->
+```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 5. Season total catch (fish) and effort (angler hours). The middle dashed line shows the posterior median or 'best' estimate. Outer dashed lines show 95 percent credible intervals."),echo=FALSE,warning = FALSE}
+res<-rstan::extract(stan_fit)
 
-<!-- #elimiminate very very extreme quantiles to pretty up plots -->
-<!-- lims<-season_results%>%group_by(Parameter)%>%summarise(value = quantile(value, c(0, 0.99)), q = c(0,0.99))%>%pivot_wider(names_from = q,values_from=value) -->
+season_results<-data.frame(res$C_sum,res$E_sum)%>%
+  mutate(iter=row_number())%>%
+  rename(`Season Total Catch`=res.C_sum,`Season Total Effort`=res.E_sum)%>%
+  pivot_longer(names_to = "Parameter",values_to="value",cols=c(`Season Total Catch`,`Season Total Effort`))
 
-<!-- season_results_trunc=season_results%>%left_join(lims,by="Parameter")%>%filter(value>as.numeric(`0`) & value < as.numeric(`0.99`)) -->
+#elimiminate very very extreme quantiles to pretty up plots
+lims<-season_results%>%group_by(Parameter)%>%summarise(value = quantile(value, c(0, 0.99)), q = c(0,0.99))%>%pivot_wider(names_from = q,values_from=value)
 
-<!-- ggplot(season_results_trunc,aes(x=value,fill=Parameter))+ -->
-<!--   facet_wrap(~Parameter,ncol=1,  scales = 'free')+ -->
-<!--   theme_bw()+ -->
-<!--   geom_density()+ -->
-<!--   ylab(NULL)+ -->
-<!--   geom_vline(season_results%>%group_by(Parameter)%>%summarise(value = quantile(value, c(0.025, 0.5, 0.975)), q = c(0.025, 0.5, 0.975)),mapping=aes(xintercept=value,group=Parameter),linetype="dashed")+ -->
-<!--   theme(legend.title = element_blank()) -->
+season_results_trunc=season_results%>%left_join(lims,by="Parameter")%>%filter(value>as.numeric(`0`) & value < as.numeric(`0.99`))
 
-<!-- ``` -->
+ggplot(season_results_trunc,aes(x=value,fill=Parameter))+
+  facet_wrap(~Parameter,ncol=1,  scales = 'free')+
+  theme_bw()+
+  geom_density()+
+  ylab(NULL)+
+  geom_vline(season_results%>%group_by(Parameter)%>%summarise(value = quantile(value, c(0.025, 0.5, 0.975)), q = c(0.025, 0.5, 0.975)),mapping=aes(xintercept=value,group=Parameter),linetype="dashed")+
+  theme(legend.title = element_blank())
 
-<!-- ### Daily Catch, Effort, and Catch Per Unit Effort  -->
-<!-- Below, you will find an estimate of the daily catch (fish), effort (hours), and catch per unit effort (fish/hr). The lines are the "best" estimates and the shading shows the 95 percent credible intervals (which are obtained from the statistical model used to estimate catch). -->
-<!-- ```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 6. Daily catch. Lines are posterior medians or 'best' estimates, while shading shows 95% credible intervals."),echo=FALSE,warning = FALSE} -->
-<!-- closed.Dates.DF<-closed.Dates.DF%>%pivot_longer(cols=c("Skagit","Sauk"))%>%rename(Section=name,closure=value) -->
-<!-- Catch.summary<-Catch.summary%>% -->
-<!--   left_join(closed.Dates.DF,by=c("Date","Section"))%>% -->
-<!--   mutate(closure=ifelse(is.na(closure),"Open","Closed"))#%>% -->
-<!--   #mutate(Median=ifelse(closure=="Open",Median,NA),Mean=ifelse(closure=="Open",Mean,NA),l95=ifelse(closure=="Open",l95,NA),u95=ifelse(closure=="Open",u95,NA)) -->
-<!-- ggplot(Catch.summary,aes(x=as.Date(Date),y=Median,col=as.factor(Gear)))+ -->
-<!--   facet_wrap(~Section,ncol=1)+ -->
-<!--   geom_line(size=1.2)+ -->
-<!--   ylab(paste0("Catch - ",catch.group.of.interest," (fish)"))+ -->
-<!--   xlab("")+ -->
-<!--   scale_x_date(date_labels = "%b-%d",date_breaks = "weeks")+ -->
-<!--   geom_ribbon(aes(ymin=l95, ymax=u95,fill=as.factor(Gear)),alpha=0.2,col=NA)+ -->
-<!--   #geom_rect(Catch.summary%>%filter(closure=="Closed"),mapping=aes(xmin = as.Date(Date)-0.5, xmax = as.Date(Date)+0.5, fill = as.factor(closure)),color=NA, ymin = -Inf, ymax = Inf, alpha = 1,fill="grey90")+ -->
-<!--   theme_bw()+ -->
-<!--   theme(axis.text.x = element_text(angle = 90),legend.title = element_blank()) -->
-<!-- ``` -->
+```
+
+### Daily Catch, Effort, and Catch Per Unit Effort
+Below, you will find an estimate of the daily catch (fish), effort (hours), and catch per unit effort (fish/hr). The lines are the "best" estimates and the shading shows the 95 percent credible intervals (which are obtained from the statistical model used to estimate catch).
+```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 6. Daily catch. Lines are posterior medians or 'best' estimates, while shading shows 95% credible intervals."),echo=FALSE,warning = FALSE}
+closed.Dates.DF<-closed.Dates.DF%>%
+  pivot_longer(cols=c("Skagit","Sauk"))%>%
+  rename(Section=name,closure=value)
+
+Catch.summary<-Catch.summary%>%
+  left_join(closed.Dates.DF,by=c("Date","Section"))%>%
+  mutate(closure=ifelse(is.na(closure),"Open","Closed"))#%>%
+  #mutate(Median=ifelse(closure=="Open",Median,NA),Mean=ifelse(closure=="Open",Mean,NA),l95=ifelse(closure=="Open",l95,NA),u95=ifelse(closure=="Open",u95,NA))
+
+ggplot(Catch.summary,aes(x=as.Date(Date),y=Median,col=as.factor(Gear)))+
+  facet_wrap(~Section,ncol=1)+
+  geom_line(size=1.2)+
+  ylab(paste0("Catch - ",catch.group.of.interest," (fish)"))+
+  xlab("")+
+  scale_x_date(date_labels = "%b-%d",date_breaks = "weeks")+
+  geom_ribbon(aes(ymin=l95, ymax=u95,fill=as.factor(Gear)),alpha=0.2,col=NA)+
+  #geom_rect(Catch.summary%>%filter(closure=="Closed"),mapping=aes(xmin = as.Date(Date)-0.5, xmax = as.Date(Date)+0.5, fill = as.factor(closure)),color=NA, ymin = -Inf, ymax = Inf, alpha = 1,fill="grey90")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90),legend.title = element_blank())
+```
 
 <!-- ```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 7. Daily effort. Lines are posterior medians or 'best' estimates, while shading shows 95% credible intervals."), echo=FALSE,warning=F} -->
 <!-- Effort.summary<-Effort.summary%>% -->
