@@ -1099,7 +1099,7 @@ The run size forecast is below, and is reprinted from the co-manager agreed-to [
 For more details on how this forecast was developed, see this [**GitHub repository**](https://github.com/casruff/Skagit-River-Steelhead-Forecast), which is collaboratively maintained by tribal Co-Managers & WDFW.
 
 ```{r include=TRUE, fig.align="center", fig.cap=c("Figure 1. Skagit Steelhead Run-size Forecast. The forecast is shown as a 'bell curve' (though not symmetric), where the height of the curve is proportional to the probability that the true value (catch or effort) is equal to a particular value on the x-axis. The 'best' value is the 50th percentile, shown as a dashed line."),echo=FALSE}
-runsize<-read_csv("https://raw.github.com/tbuehrens/Skagit-River-Steelhead-Forecast/master/analysis/cache/ensemble_forecast_posterior.csv")
+runsize<-read_csv(file.path(here("fishery_analyses", params$project_name, params$fishery_name),"ensemble_forecast_posterior.csv"))
 ggplot(data=runsize,aes(x=ensemble_forecast_posterior))+
   geom_density(fill="forest green")+
   geom_vline(data=runsize,mapping=aes(xintercept=median(ensemble_forecast_posterior)),linetype="dashed")+
