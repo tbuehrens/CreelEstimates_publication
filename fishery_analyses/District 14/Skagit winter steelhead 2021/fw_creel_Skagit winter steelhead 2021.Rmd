@@ -1269,7 +1269,9 @@ Here, we compare the actual in-season estimated sport fishery catch, assuming 10
 ```{r include=TRUE, fig.align="center", fig.cap=c("Figure 9. Probability that the actual in-season estimated sport fishery harvest exceeds the allowable harvest (expressed as percentages) under the RMP. Vertical lines denote 50 percent of the allowable harvest, which is shared between the state and tribes, and 100 percent of the allowable harvest. The best in-season estimate of the percent of the allowable harvest that has been used by the sport fishery is located on the graph where the probability of exceedance is 50 percent."),echo=FALSE,warning=F}
 H<-res$C_sum*0.1
 PAH<-(sample(H,10000,replace = T)/sample(AH$AH,10000,replace = T))*100
-PAHdat<-data.frame(PAH,percent_rank(-PAH))%>%rename(Exceedence="percent_rank..PAH.")
+PAHdat<-data.frame(PAH,percent_rank(-PAH))%>%
+  rename(Exceedence="percent_rank..PAH.")
+
 ggplot(data=PAHdat,aes(x=PAH,y=Exceedence))+
   geom_line(size=1.25)+
   theme_bw()+
