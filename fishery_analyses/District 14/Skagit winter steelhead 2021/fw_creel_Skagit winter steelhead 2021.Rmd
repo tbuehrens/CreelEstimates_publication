@@ -1199,7 +1199,7 @@ print(plot)
 
 ## In-season Fishery Results
 
-WDFW fishery managers use data from creel surveys to estimate the season total and daily catch and effort, and the daily catch per unit effort (CPUE). Results presented below include data collected through: **`r format(as.Date(all.Dates$Date[nrow(all.Dates)]), '%m/%d/%Y')`**
+WDFW fishery managers use data from creel surveys to estimate the season total and daily catch and effort, and the daily catch per unit effort (CPUE). Results presented below include data collected through: **`r params$est_date_end`**
 
 ### Disclaimer
 Contents on this page should be treated as preliminary and are subject to change. While every effort has been made to ensure the accuracy of data and modeling here, some numbers may change. Particularly in-season catch and effort estimates may change as additional data becomes available, and as data errors are corrected.
