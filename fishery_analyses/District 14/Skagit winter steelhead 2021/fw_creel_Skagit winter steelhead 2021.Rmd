@@ -1283,15 +1283,30 @@ ggplot(data=PAHdat,aes(x=PAH,y=Exceedence))+
 ```
 
 ```{r include=TRUE, fig.align="center", fig.cap=c("Figure 10. Probability that the sport fishery harvest exceeds 50 and 100 percent of the allowable harvest under the RMP, as well as the best estimate of the percentage of allowable impacts the sport fishery will use."),echo=FALSE}
-probs<-c(PAHdat$PAH[which(abs(PAHdat$Exceedence - 0.5)==min(abs(PAHdat$Exceedence - 0.5)))],
-  PAHdat$Exceedence[which(abs(PAHdat$PAH - 50)==min(abs(PAHdat$PAH - 50)))]*100,
-  PAHdat$Exceedence[which(abs(PAHdat$PAH - 100)==min(abs(PAHdat$PAH - 100)))]*100
+probs<-tibble(
+  parameter= c("best estimate of sport \nfishery impacts as \n % of total (sport + tribal) \n allowable",
+               "probability sport fishery \n impacts > 50% of total \n (sport + tribal) allowable",
+               "probability sport fishery \n impacts > 100% of total \n (sport + tribal) allowable"),
+  probability=c(PAHdat$PAH[which(abs(PAHdat$Exceedence - 0.5)==min(abs(PAHdat$Exceedence - 0.5)))],
+                PAHdat$Exceedence[which(abs(PAHdat$PAH - 50)==min(abs(PAHdat$PAH - 50)))]*100,
+                PAHdat$Exceedence[which(abs(PAHdat$PAH - 100)==min(abs(PAHdat$PAH - 100)))]*100
+                )
   )
-par(mar=c(5,15,5,5))
-names(probs)<-c("best estimate of sport \nfishery impacts as \n % of total (sport + tribal) \n allowable","probability sport fishery \n impacts > 50% of total \n (sport + tribal) allowable","probability sport fishery \n impacts > 100% of total \n (sport + tribal) allowable")
-barplot(probs,horiz = T,xlim=c(0,100),las=2,yaxs="i",col="forest green", main="In-season Estimate"
-        )
-box()
+
+
+plot <- ggplot(probs, aes(y = probability, x = parameter)) +
+  geom_bar(stat = "identity", fill = "forestgreen") +
+  ylim(0, 100) +
+  coord_flip() +  # Horizontal orientation
+  labs(
+    title = "In-season Estimate",
+    x = "Probability",
+    y = NULL  # Remove y-axis label
+  ) +
+  theme_bw()+
+  geom_hline(yintercept=50,color="red",linetype="dashed")
+
+print(plot)
 ```
 
 
