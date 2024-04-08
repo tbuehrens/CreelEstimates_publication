@@ -1170,15 +1170,31 @@ ggplot(data=PAHdat_plan,aes(x=PAH_plan,y=Exceedence))+
   geom_vline(xintercept=100,col="red")
 ```
 ```{r include=TRUE, fig.align="center", fig.cap=c("Figure 4. Pre-season Planned Probability that the sport fishery harvest exceeds 50 and 100 percent of the allowable harvest under the RMP, as well as the best estimate of the percentage of allowable impacts the sport fishery will use"),echo=FALSE}
-probs<-c(PAHdat_plan$PAH_plan[which(abs(PAHdat_plan$Exceedence - 0.5)==min(abs(PAHdat_plan$Exceedence - 0.5)))],
-  PAHdat_plan$Exceedence[which(abs(PAHdat_plan$PAH - 50)==min(abs(PAHdat_plan$PAH - 50)))]*100,
-  PAHdat_plan$Exceedence[which(abs(PAHdat_plan$PAH - 100)==min(abs(PAHdat_plan$PAH - 100)))]*100
+
+probs_plan<-tibble(
+  parameter= c("best estimate of sport \nfishery impacts as \n % of total (sport + tribal) \n allowable",
+               "probability sport fishery \n impacts > 50% of total \n (sport + tribal) allowable",
+               "probability sport fishery \n impacts > 100% of total \n (sport + tribal) allowable"),
+  probability=c(PAHdat_plan$PAH[which(abs(PAHdat_plan$Exceedence - 0.5)==min(abs(PAHdat_plan$Exceedence - 0.5)))],
+                PAHdat_plan$Exceedence[which(abs(PAHdat_plan$PAH - 50)==min(abs(PAHdat_plan$PAH - 50)))]*100,
+                PAHdat_plan$Exceedence[which(abs(PAHdat_plan$PAH - 100)==min(abs(PAHdat_plan$PAH - 100)))]*100
+                )
   )
-par(mar=c(5,15,5,5))
-names(probs)<-c("best estimate of sport \nfishery impacts as \n % of total (sport + tribal) \n allowable","probability sport fishery \n impacts > 50% of total \n (sport + tribal) allowable","probability sport fishery \n impacts > 100% of total \n (sport + tribal) allowable")
-barplot(probs,horiz = T,xlim=c(0,100),las=2,yaxs="i",col="forest green",main="Pre-season Plan"
-        )
-box()
+
+
+plot <- ggplot(probs_plan, aes(y = probability, x = parameter)) +
+  geom_bar(stat = "identity", fill = "forestgreen") +
+  ylim(0, 100) +
+  coord_flip() +  # Horizontal orientation
+  labs(
+    title = "Pre-season Estimate",
+    x = "Probability",
+    y = NULL  # Remove y-axis label
+  ) +
+  theme_bw()+
+  geom_hline(yintercept=50,color="red",linetype="dashed")
+
+print(plot)
 ```
 
 ## In-season Fishery Results
