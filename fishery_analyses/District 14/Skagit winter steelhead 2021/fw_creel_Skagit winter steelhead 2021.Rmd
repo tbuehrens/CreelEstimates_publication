@@ -1000,10 +1000,10 @@ bayes_p<-bayes_p%>%
   )
 
 
-p<-ggplot(V_A_PPC, aes(x = V_A, y = V_A,colors=gear)) +
+p<-ggplot(V_A_PPC, aes(x = V_A, y = V_A,color=fit)) +
   facet_grid(cols=vars(gear)) +
-  geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0) +
-  labs(x = "Observed E_s", y = "95% PPI") +
+  geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0,position = position_jitter(width = 0.1, height=0)) +
+  labs(x = "Observed V_A_PPC", y = "95% PPI") +
   geom_line(color="black") +
   ylim(0, max(V_A_PPC$`97.5%`)) +
   xlim(0, max(V_A_PPC$`97.5%`))
