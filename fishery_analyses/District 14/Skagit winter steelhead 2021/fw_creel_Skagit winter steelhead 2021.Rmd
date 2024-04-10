@@ -744,6 +744,14 @@ if(nchar(params$output_location_filepath) > 1) {
 library(bayesplot)
 
 stan_fit<-readRDS(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, ".rds")))
+
+
+sections<-dwg$effort |> 
+  filter(location_type == "Section") |> 
+  distinct(water_body, section_num, location) |> 
+  arrange(section_num) |>
+  select(water_body,section=section_num,location)
+
 #write.csv(summary(stan_fit)$summary,file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_summary_", params$fishery_name, ".csv")))
 
 # stan_fit<-readRDS(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, "_ZINB.rds")))
@@ -762,6 +770,8 @@ V_I_PPC<-as.data.frame(apply(extract(stan_fit)$V_I_rep,2, function(x) quantile(x
                    countnum = inputs_bss[[ecg]]$countnum_V
                    )
   )%>%
+  left_join(sections)%>%
+  mutate(section=water_body)%>%
   mutate(section = as.factor(section),
          day = as.factor(day),
          countnum = as.factor(countnum),
@@ -794,7 +804,7 @@ p<-ggplot(V_I_PPC, aes(x = V_I, y = V_I, color=section)) +
   geom_line(color="black") +
   ylim(0, max(V_I_PPC$`97.5%`)) +
   xlim(0, max(V_I_PPC$`97.5%`)) + 
-  theme_classic()
+  theme_bw()
 
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "V_I_PPC.png"),
@@ -816,6 +826,8 @@ T_I_PPC<-as.data.frame(apply(extract(stan_fit)$T_I_rep,2, function(x) quantile(x
                    countnum = inputs_bss[[ecg]]$countnum_T
                    )
   )%>%
+  left_join(sections)%>%
+  mutate(section=water_body)%>%
   mutate(section = as.factor(section),
          day = as.factor(day),
          countnum = as.factor(countnum),
@@ -870,6 +882,13 @@ E_s_PPC<-as.data.frame(apply(extract(stan_fit)$E_s_rep,2, function(x) quantile(x
                    countnum = inputs_bss[[ecg]]$countnum_E
                    )
   )%>%
+  left_join(sections)%>%
+  mutate(section=water_body,
+         gear = case_when(
+           gear == 1 ~ "Bank Anglers",
+           gear == 2 ~ "Boat Anglers" 
+      )
+    )%>%
   mutate(section = as.factor(section),
          day = as.factor(day),
          gear= as.factor(gear),
@@ -924,11 +943,19 @@ c_PPC<-as.data.frame(apply(extract(stan_fit)$c_rep,2, function(x) quantile(x, c(
                    gear = inputs_bss[[ecg]]$gear_IntC,
                    )
   )%>%
+  left_join(sections)%>%
+  mutate(section=water_body,
+         gear = case_when(
+           gear == 1 ~ "Bank Anglers",
+           gear == 2 ~ "Boat Anglers" 
+      )
+    )%>%
   mutate(section = as.factor(section),
          day = as.factor(day),
          gear= as.factor(gear),
          fit = ifelse(c>=`2.5%` & c<=`97.5%`,"fit","no fit")
          )
+
 bayes_p<-bayes_p%>%
   bind_rows(c_PPC%>%
     group_by(section, gear) %>%
@@ -976,6 +1003,10 @@ V_A_PPC<-as.data.frame(apply(extract(stan_fit)$V_A_rep,2, function(x) quantile(x
                    gear = inputs_bss[[ecg]]$gear_IntA
                    )
   )%>%
+  mutate(gear = case_when(
+    gear == 1 ~ "Bank Anglers",
+    gear == 2 ~ "Boat Anglers"
+    )%>%  
   mutate(gear= as.factor(gear),
          fit = factor(ifelse(V_A>=`2.5%` & V_A<=`97.5%`,"fit","no fit"))
          )
@@ -1025,6 +1056,10 @@ T_A_PPC<-as.data.frame(apply(extract(stan_fit)$T_A_rep,2, function(x) quantile(x
                    gear = inputs_bss[[ecg]]$gear_IntA
                    )
   )%>%
+  mutate(gear = case_when(
+    gear == 1 ~ "Bank Anglers",
+    gear == 2 ~ "Boat Anglers"
+    )%>%    
   mutate(gear= as.factor(gear),
          fit = factor(ifelse(T_A>=`2.5%` & T_A<=`97.5%`,"fit","no fit"))
          )
@@ -1241,43 +1276,47 @@ ggplot(season_results_trunc,aes(x=value,fill=Parameter))+
 ### Daily Catch, Effort, and Catch Per Unit Effort
 Below, you will find an estimate of the daily catch (fish), effort (hours), and catch per unit effort (fish/hr). The lines are the "best" estimates and the shading shows the 95 percent credible intervals (which are obtained from the statistical model used to estimate catch).
 ```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 6. Daily catch. Lines are posterior medians or 'best' estimates, while shading shows 95% credible intervals."),echo=FALSE,warning = FALSE}
-map_df(estimates_bss, ~.x$catch_daily) |> 
-    ggplot(aes(x = event_date, y = `50%`, fill = angler_final, color = angler_final)) +
-    geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), alpha = 0.2, color = "transparent") +
-    geom_line(lwd = 1) +
-    ylab("Catch (fish") +
-    xlab("Date") +
-    labs(color = "Angler type", fill = "Angler type") +
-    scale_x_date() +
-    theme_bw() +
-    facet_wrap(~section_num + est_cg)
+map_df(estimates_bss, ~.x$catch_daily) |>
+  left_join(sections|>dplyr::rename(section_num=section))|>
+  ggplot(aes(x = event_date, y = `50%`, fill = angler_final, color = angler_final)) +
+  geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), alpha = 0.2, color = "transparent") +
+  geom_line(lwd = 1) +
+  ylab("Catch (fish") +
+  xlab("Date") +
+  labs(color = "Angler type", fill = "Angler type") +
+  scale_x_date() +
+  theme_bw() +
+  facet_wrap(~water_body + est_cg)
 ```
 
 ```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 7. Daily effort. Lines are posterior medians or 'best' estimates, while shading shows 95% credible intervals."), echo=FALSE,warning=F}
-estimates_bss[[1]]$effort_daily |> 
-    ggplot(aes(x = event_date, y = `50%`, fill = angler_final, color = angler_final)) +
-    geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), alpha = 0.2, color = "transparent") +
-    geom_line(lwd = 1) +
-    ylab("Median (50%) effort (angler hours)") +
-    xlab("Date") +
-    labs(color = "Angler type", fill = "Angler type") +
-    scale_x_date() +
-    theme_bw() +
-    facet_wrap(~section_num, nrow = estimates_bss[[1]]$effort_daily$section_num |> n_distinct())
+estimates_bss[[1]]$effort_daily |>
+  left_join(sections|>dplyr::rename(section_num=section))|>
+  ggplot(aes(x = event_date, y = `50%`, fill = angler_final, color = angler_final)) +
+  geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), alpha = 0.2, color = "transparent") +
+  geom_line(lwd = 1) +
+  ylab("Median (50%) effort (angler hours)") +
+  xlab("Date") +
+  labs(color = "Angler type", fill = "Angler type") +
+  scale_x_date() +
+  theme_bw() +
+  facet_wrap(~water_body, nrow = estimates_bss[[1]]$effort_daily$section_num |>
+               n_distinct())
 
 ```
 
 ```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 8. Daily CPUE. Lines are posterior medians or 'best' estimates, while shading shows 95% credible intervals."),echo=FALSE,warning=F}
 map_df(estimates_bss, ~.x$cpue_daily) |> 
+    left_join(sections|>dplyr::rename(section_num=section))|>
     ggplot(aes(x = event_date, y = `50%`, fill = angler_final, color = angler_final)) +
     geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), alpha = 0.2, color = "transparent") +
     geom_line(lwd = 1) +
-    ylab("Median (50%) catch per unit effort (fish/hour") +
+    ylab("Median (50%) catch per unit effort (fish/hour)") +
     xlab("Date") +
     labs(color = "Angler type", fill = "Angler type") +
     scale_x_date() +
     theme_bw() +
-    facet_wrap(~section_num + est_cg)
+    facet_wrap(~water_body + est_cg)
 ```
 
 ### In-season Impact Monitoring: Fishery Impacts Relative to Resource Management Plan Limits
