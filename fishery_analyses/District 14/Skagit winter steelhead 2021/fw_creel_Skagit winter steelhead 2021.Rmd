@@ -1169,11 +1169,15 @@ For more details on how this forecast was developed, see this [**GitHub reposito
 
 ```{r include=TRUE, fig.align="center", fig.cap=c("Figure 1. Skagit Steelhead Run-size Forecast. The forecast is shown as a 'bell curve' (though not symmetric), where the height of the curve is proportional to the probability that the true value (catch or effort) is equal to a particular value on the x-axis. The 'best' value is the 50th percentile, shown as a dashed line."),echo=FALSE}
 runsize<-read_csv(file.path(here("fishery_analyses", params$project_name, params$fishery_name),"ensemble_forecast_posterior.csv"))
-ggplot(data=runsize,aes(x=ensemble_forecast_posterior))+
-  geom_density(fill="forest green")+
-  geom_vline(data=runsize,mapping=aes(xintercept=median(ensemble_forecast_posterior)),linetype="dashed")+
+runsize_plt<-ggplot(data=runsize,aes(x=ensemble_forecast_posterior))+
+  geom_density(aes(y=..density.. / max(..density..)),fill="forest green")+
+  #geom_vline(data=runsize,mapping=aes(xintercept=median(ensemble_forecast_posterior)),linetype="dashed",linewidth=1.5)+
+   geom_vline(data=hcr%>%filter(MinRunsize!=0),mapping=aes(xintercept=MinRunsize),linetype="dashed")+
   xlab("Forecasted Run-Size")+
+  ylab("Relative Probability")+
   theme_bw()
+print(runsize_plt)
+
 
 runsize%>%
   summarise(`Run Size` = round(quantile(ensemble_forecast_posterior, c(0.025, 0.25, 0.5,0.75, 0.975))), q = c(0.025,0.25, 0.5,0.75, 0.975)*100)%>%
@@ -1211,7 +1215,8 @@ AH$Exceedence<-rev(sort(percent_rank(AH$AH)))
 
 breaks <- 10^(-10:10)
 minor_breaks <- rep(1:9, 21)*(10^rep(-10:10, each=9))
-ggplot(data=AH,aes(x=AH,y=Exceedence))+
+
+allowable_harvest_plt<-ggplot(data=AH,aes(x=AH,y=Exceedence))+
   geom_line(size=1.25)+
   theme_bw()+
   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks)+
@@ -1219,6 +1224,8 @@ ggplot(data=AH,aes(x=AH,y=Exceedence))+
   coord_equal() +
   ylab("Probability of Exceedance")+
   xlab("Allowable (State + Tribal) Co-manager Harvest (fish)")
+
+print(allowable_harvest_plt)
 ```
 
 Given the uncertainty in what the allowable harvest will turn out to be, managers must balance the risk of exceeding the allowable harvest with the cost of erring so heavily on the side of conservation (to ensure the allowable harvest is not exceeded) that no fishery is allowed at all. To assist with this task, managers can plan a fishery to harvest a particular number of fish (which itself may be estimated with uncertainty) and then calculate the probability that the allowable harvest will turn out to have been exceeded if the planned fishery is implemented.
@@ -1238,6 +1245,7 @@ ggplot(data=PAHdat_plan,aes(x=PAH_plan,y=Exceedence))+
   geom_vline(xintercept=50)+
   geom_vline(xintercept=100,col="red")
 ```
+
 ```{r include=TRUE, fig.align="center", fig.cap=c("Figure 4. Pre-season Planned Probability that the sport fishery harvest exceeds 50 and 100 percent of the allowable harvest under the RMP, as well as the best estimate of the percentage of allowable impacts the sport fishery will use"),echo=FALSE}
 
 probs_plan<-tibble(
@@ -1277,10 +1285,16 @@ Contents on this page should be treated as preliminary and are subject to change
 
 This table and the figures below it show estimates of the season total catch and effort. Estimates are shown as 'bell curves' (though not symmetric), where the height of the curve is proportional to the probability that the true value (catch or effort) is equal to a particular value on the x-axis. The "best" estimate is the 50th percentile (median) in the table, and is denoted by the middle dashed line in the graphs:
 ```{r run_resid_analysis, message = FALSE, warning = FALSE,results = "asis",include=TRUE, echo=FALSE}
-estimates_bss %>%
-  map_df(~ .x$overview) %>%
+total_effort_catch_tbl<-estimates_bss %>%
+  map_df(~ .x$overview) 
+
+total_effort_catch_tbl|>
+  write.csv(file.path(here("fishery_analyses", params$project_name, params$fishery_name),"total_effort_catch_tbl.csv"),row.names = F)
+
+total_effort_catch_tbl%>%
   kableExtra::kbl(caption = "Table 3. Total Catch (fish) and Effort (hours). The 'best' estimate is the median or 50th percentile. The table shows the percentiles of estimated catch and effort, which represent the probability that the true catch or effort is below a particular value. For example, there is a 50% probability the true catch is below the 50th percentile of the estimated catch in this table.", digits = 1) %>%
   kableExtra::kable_classic(full_width = FALSE, html_font = "Cambria")
+
 ```
 
 
@@ -1289,69 +1303,122 @@ res<-rstan::extract(stan_fit)
 
 season_results<-data.frame(res$C_sum,res$E_sum)%>%
   mutate(iter=row_number())%>%
+  as_tibble()%>%
   rename(`Season Total Catch`=res.C_sum,`Season Total Effort`=res.E_sum)%>%
-  pivot_longer(names_to = "Parameter",values_to="value",cols=c(`Season Total Catch`,`Season Total Effort`))
+  mutate(`Seasonal CPUE` = `Season Total Catch`/`Season Total Effort`)%>%
+  pivot_longer(names_to = "Parameter",values_to="value",cols=c(`Season Total Catch`,`Season Total Effort`,`Seasonal CPUE`))
 
-#elimiminate very very extreme quantiles to pretty up plots
-lims<-season_results%>%group_by(Parameter)%>%summarise(value = quantile(value, c(0, 0.99)), q = c(0,0.99))%>%pivot_wider(names_from = q,values_from=value)
 
-season_results_trunc=season_results%>%left_join(lims,by="Parameter")%>%filter(value>as.numeric(`0`) & value < as.numeric(`0.99`))
-
-ggplot(season_results_trunc,aes(x=value,fill=Parameter))+
-  facet_wrap(~Parameter,ncol=1,  scales = 'free')+
-  theme_bw()+
-  geom_density()+
-  ylab(NULL)+
-  geom_vline(season_results%>%group_by(Parameter)%>%summarise(value = quantile(value, c(0.025, 0.5, 0.975)), q = c(0.025, 0.5, 0.975)),mapping=aes(xintercept=value,group=Parameter),linetype="dashed")+
+total_catch_plt <- ggplot(season_results %>% 
+                             filter(Parameter == "Season Total Catch")
+                           , aes(x = value, fill = Parameter)
+                           )+
+  theme_bw() +
+  geom_density(aes(y=..density.. / max(..density..)))+
+  ylab("Relative \nProbability") +
+  xlab("Fish") +
+  geom_vline(data = season_results %>%
+               filter(Parameter == "Season Total Catch")%>%
+               summarise(value = quantile(value, c(0.025, 0.5, 0.975))),
+             aes(xintercept = value),
+             linetype = "dashed") +
   theme(legend.title = element_blank())
+
+total_effort_plt <- ggplot(season_results %>% 
+                             filter(Parameter == "Season Total Effort")
+                           , aes(x = value, fill = Parameter)
+                           )+
+  theme_bw() +
+  geom_density(aes(y=..density.. / max(..density..)))+
+  ylab("Relative \nProbability") +
+  xlab("Angler Hours") +
+  geom_vline(data = season_results %>%
+               filter(Parameter == "Season Total Effort")%>%
+               summarise(value = quantile(value, c(0.025, 0.5, 0.975))),
+             aes(xintercept = value),
+             linetype = "dashed") +
+  theme(legend.title = element_blank())
+
+total_CPUE_plt <- ggplot(season_results %>% 
+                             filter(Parameter == "Seasonal CPUE")
+                           , aes(x = value, fill = Parameter)
+                           )+
+  theme_bw() +
+  geom_density(aes(y=..density.. / max(..density..)))+
+  ylab("Relative \nProbability")+
+  xlab("Fish/Hour") +
+  geom_vline(data = season_results %>%
+               filter(Parameter == "Seasonal CPUE")%>%
+               summarise(value = quantile(value, c(0.025, 0.5, 0.975))),
+             aes(xintercept = value),
+             linetype = "dashed") +
+  theme(legend.title = element_blank(), lege)
+
+# Print the plots
+total_plt<-gridExtra::grid.arrange(
+  total_catch_plt + guides(fill=FALSE),
+  total_effort_plt + guides(fill=FALSE),
+  total_CPUE_plt + guides(fill=FALSE),
+  nrow=3
+)
+
 
 ```
 
 ### Daily Catch, Effort, and Catch Per Unit Effort
 Below, you will find an estimate of the daily catch (fish), effort (hours), and catch per unit effort (fish/hr). The lines are the "best" estimates and the shading shows the 95 percent credible intervals (which are obtained from the statistical model used to estimate catch).
 ```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 6. Daily catch. Lines are posterior medians or 'best' estimates, while shading shows 95% credible intervals."),echo=FALSE,warning = FALSE}
-map_df(estimates_bss, ~.x$catch_daily) |>
+daily_catch_plt<-map_df(estimates_bss, ~.x$catch_daily) |>
   left_join(sections|>dplyr::rename(section_num=section))|>
   ggplot(aes(x = event_date, y = `50%`, fill = angler_final, color = angler_final)) +
   geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), alpha = 0.2, color = "transparent") +
   geom_line(lwd = 1) +
-  ylab("Catch (fish") +
+  ylab("Catch (fish)") +
   xlab("Date") +
   labs(color = "Angler type", fill = "Angler type") +
   scale_x_date() +
   theme_bw() +
-  facet_wrap(~water_body + est_cg)
+  facet_wrap(~water_body)+
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.01)) 
+
+print(daily_catch_plt)
 ```
 
 ```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 7. Daily effort. Lines are posterior medians or 'best' estimates, while shading shows 95% credible intervals."), echo=FALSE,warning=F}
-estimates_bss[[1]]$effort_daily |>
+daily_effort_plt<-estimates_bss[[1]]$effort_daily |>
   left_join(sections|>dplyr::rename(section_num=section))|>
   ggplot(aes(x = event_date, y = `50%`, fill = angler_final, color = angler_final)) +
   geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), alpha = 0.2, color = "transparent") +
   geom_line(lwd = 1) +
-  ylab("Median (50%) effort (angler hours)") +
+  ylab("Effort (angler hours)") +
   xlab("Date") +
   labs(color = "Angler type", fill = "Angler type") +
   scale_x_date() +
   theme_bw() +
-  facet_wrap(~water_body, nrow = estimates_bss[[1]]$effort_daily$section_num |>
-               n_distinct())
+  facet_wrap(~water_body)
+
+print(daily_effort_plt)
 
 ```
 
 ```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 8. Daily CPUE. Lines are posterior medians or 'best' estimates, while shading shows 95% credible intervals."),echo=FALSE,warning=F}
-map_df(estimates_bss, ~.x$cpue_daily) |> 
+daily_CPUE_plt<-map_df(estimates_bss, ~.x$cpue_daily) |> 
     left_join(sections|>dplyr::rename(section_num=section))|>
     ggplot(aes(x = event_date, y = `50%`, fill = angler_final, color = angler_final)) +
     geom_ribbon(aes(ymin = `2.5%`, ymax = `97.5%`), alpha = 0.2, color = "transparent") +
     geom_line(lwd = 1) +
-    ylab("Median (50%) catch per unit effort (fish/hour)") +
+    ylab("CPUE (fish/hour)") +
     xlab("Date") +
     labs(color = "Angler type", fill = "Angler type") +
     scale_x_date() +
+    #scale_y_log10()+
+    #annotation_logticks(sides="l")+
     theme_bw() +
-    facet_wrap(~water_body + est_cg)
+    facet_wrap(~water_body)
+
+print(daily_CPUE_plt)
 ```
+
 
 ### In-season Impact Monitoring: Fishery Impacts Relative to Resource Management Plan Limits
 Here, we compare the actual in-season estimated sport fishery catch, assuming 10% C&R mortality, with the allowable harvest estimated from the forecasted run size and the RMP mortality limits, to estimate the probability that the allowable harvest has been exceeded by the actual fishery (as opposed to the pre-season plan that we looked at previously). Early in the season when little catch has occurred, the probability that the allowable harvest has been exceeded is low, but increases as the season goes on. This analyis enables an in-season quantification of risk by managers, which may be helpful in decision-making:
@@ -1361,7 +1428,7 @@ PAH<-(sample(H,10000,replace = T)/sample(AH$AH,10000,replace = T))*100
 PAHdat<-data.frame(PAH,percent_rank(-PAH))%>%
   rename(Exceedence="percent_rank..PAH.")
 
-ggplot(data=PAHdat,aes(x=PAH,y=Exceedence))+
+catch_exceedence_plt<-ggplot(data=PAHdat,aes(x=PAH,y=Exceedence))+
   geom_line(size=1.25)+
   theme_bw()+
   ylab("Probability of Exceedance")+
@@ -1369,33 +1436,111 @@ ggplot(data=PAHdat,aes(x=PAH,y=Exceedence))+
   xlim(0,max(quantile(PAHdat$PAH,0.99),100))+
   geom_vline(xintercept=50)+
   geom_vline(xintercept=100,col="red")
+
+plot(catch_exceedence_plt)
 ```
 
 ```{r include=TRUE, fig.align="center", fig.cap=c("Figure 10. Probability that the sport fishery harvest exceeds 50 and 100 percent of the allowable harvest under the RMP, as well as the best estimate of the percentage of allowable impacts the sport fishery will use."),echo=FALSE}
 probs<-tibble(
-  parameter= c("best estimate of sport \nfishery impacts as \n % of total (sport + tribal) \n allowable",
-               "probability sport fishery \n impacts > 50% of total \n (sport + tribal) allowable",
-               "probability sport fishery \n impacts > 100% of total \n (sport + tribal) allowable"),
-  probability=c(PAHdat$PAH[which(abs(PAHdat$Exceedence - 0.5)==min(abs(PAHdat$Exceedence - 0.5)))],
-                PAHdat$Exceedence[which(abs(PAHdat$PAH - 50)==min(abs(PAHdat$PAH - 50)))]*100,
-                PAHdat$Exceedence[which(abs(PAHdat$PAH - 100)==min(abs(PAHdat$PAH - 100)))]*100
+  parameter= c("Sport impacts / \n total (sport + tribal) \nallowable",
+               "Pr. sport impacts \n > 50% of total \n (sport + tribal) allowable",
+               "Pr. sport fishery \n impacts > 100% of total \n (sport + tribal) allowable"),
+  probability=c(PAHdat$PAH[which(abs(PAHdat$Exceedence - 0.5)==min(abs(PAHdat$Exceedence - 0.5)))]*0.01,
+                PAHdat$Exceedence[which(abs(PAHdat$PAH - 50)==min(abs(PAHdat$PAH - 50)))],
+                PAHdat$Exceedence[which(abs(PAHdat$PAH - 100)==min(abs(PAHdat$PAH - 100)))]
                 )
   )
 
 
-plot <- ggplot(probs, aes(y = probability, x = parameter)) +
+risk_plt <- ggplot(probs, aes(y = probability, x = parameter)) +
   geom_bar(stat = "identity", fill = "forestgreen") +
-  ylim(0, 100) +
-  coord_flip() +  # Horizontal orientation
+  ylim(0, 1) +
+  #coord_flip() +  # Horizontal orientation
   labs(
-    title = "In-season Estimate",
-    x = "Probability",
-    y = NULL  # Remove y-axis label
+    y = "Probability",
+    x = NULL  # Remove y-axis label
   ) +
   theme_bw()+
-  geom_hline(yintercept=50,color="red",linetype="dashed")
+  geom_hline(yintercept=.50,color="red",linetype="dashed")
 
-print(plot)
+print(risk_plt)
+
+```
+
+```{r save_plts}
+
+tag_facet <- function(p, open = "(", close = ")", tag_pool = letters, x = -Inf, y = Inf, 
+                            hjust = -0.5, vjust = 1.5, fontface = 2, family = "", ...) {
+        
+        gb <- ggplot_build(p)
+        lay <- gb$layout$layout
+        tags <- cbind(lay, label = paste0(open, tag_pool[lay$PANEL], close), x = x, y = y)
+        p + geom_text(data = tags, aes_string(x = "x", y = "y", label = "label"), ..., hjust = hjust, 
+                      vjust = vjust, fontface = fontface, family = family, inherit.aes = FALSE) 
+      }
+      
+
+
+daily_plt<-gridExtra::grid.arrange(
+  daily_catch_plt,
+  daily_effort_plt,
+  daily_CPUE_plt,
+  nrow=3
+)
+ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name),"daily_plt.png"),
+       plot = daily_plt,
+       width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
+       scale=1.75,
+       units = c("in")
+       )
+
+ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name),"total_plt.png"),
+       plot = total_plt,
+       width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
+       scale=1.75,
+       units = c("in")
+       )
+
+
+
+prob_management_plt<-gridExtra::grid.arrange(
+  tag_facet(runsize_plt, tag_pool="a",x =Inf, y = Inf,
+                    hjust = 1.5,
+                    open="(",
+                    close=")"
+                    ),
+    tag_facet(allowable_harvest_plt, x =Inf, y = Inf,
+              tag_pool = "b",
+                    hjust = 1.5,
+                    open="(",
+                    close=")"
+                    ),
+    tag_facet(catch_exceedence_plt, 
+              x =Inf, 
+              y = Inf,
+              tag_pool = "c",
+              hjust = 1.5,
+              open="(",
+              close=")"
+              ),
+    tag_facet(risk_plt, x =Inf, y = Inf,
+              tag_pool = "d",
+                    hjust = 1.5,
+                    open="(",
+                    close=")"
+                    ),
+  nrow=2
+)
+
+ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name),"prob_management_plt.png"),
+       plot = prob_management_plt,
+       width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
+       scale=1.75,
+       units = c("in")
+       )
+
+
+
 ```
 
 
