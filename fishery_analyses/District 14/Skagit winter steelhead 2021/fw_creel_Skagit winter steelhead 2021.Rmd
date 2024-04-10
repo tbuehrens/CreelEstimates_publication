@@ -797,10 +797,10 @@ bayes_p<-V_I_PPC %>%
 
 
 
-p<-ggplot(V_I_PPC, aes(x = V_I, y = V_I, color=section)) +
+V_I_PPC_plt<-ggplot(V_I_PPC, aes(x = V_I, y = V_I, color=section)) +
   facet_grid(cols=vars(section)) +
   geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0,position = position_jitter(width=0.5,height=0)) +
-  labs(x = "Observed V_I", y = "95% PPI") +
+  labs(x = "Observed Vehicle Counts", y = "95% PPI") +
   geom_line(color="black") +
   ylim(0, max(V_I_PPC$`97.5%`)) +
   xlim(0, max(V_I_PPC$`97.5%`)) + 
@@ -808,7 +808,7 @@ p<-ggplot(V_I_PPC, aes(x = V_I, y = V_I, color=section)) +
 
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "V_I_PPC.png"),
-       plot = p,
+       plot = V_I_PPC_plt,
        width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
        scale=1.75,
        units = c("in")
@@ -855,16 +855,17 @@ bayes_p<-bayes_p%>%
 
 
 
-p<-ggplot(T_I_PPC, aes(x = T_I, y = T_I, color=section)) +
+T_I_PPC_plt<-ggplot(T_I_PPC, aes(x = T_I, y = T_I, color=section)) +
   facet_grid(cols=vars(section)) +
   geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0,position = position_jitter(width=0.5,height=0))  +
-  labs(x = "Observed T_I", y = "95% PPI") +
+  labs(x = "Observed Trailer Counts", y = "95% PPI") +
   geom_line(color="black") +
   ylim(0, max(T_I_PPC$`97.5%`)) +
-  xlim(0, max(T_I_PPC$`97.5%`))
+  xlim(0, max(T_I_PPC$`97.5%`)) +
+  theme_bw()
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "T_I_PPC.png"),
-       plot = p,
+       plot = T_I_PPC_plt,
        width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
        scale=1.75,
        units = c("in")
@@ -916,16 +917,17 @@ bayes_p<-bayes_p%>%
 
 
 
-p<-ggplot(E_s_PPC, aes(x = E_s, y = E_s, color=section, groups=gear)) +
+E_s_PPC_plt<-ggplot(E_s_PPC, aes(x = E_s, y = E_s, color=section, groups=gear)) +
   facet_grid(cols=vars(section),rows=vars(gear)) +
   geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0, position = position_jitter(width=0.5,height=0)) +
-  labs(x = "Observed E_s", y = "95% PPI") +
+  labs(x = "Observed Angler Counts", y = "95% PPI") +
   geom_line(color="black") +
   ylim(0, max(E_s_PPC$`97.5%`)) +
-  xlim(0, max(E_s_PPC$`97.5%`))
+  xlim(0, max(E_s_PPC$`97.5%`))+ 
+  theme_bw()
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "E_s_PPC.png"),
-       plot = p,
+       plot = E_s_PPC_plt,
        width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
        scale=1.75,
        units = c("in")
@@ -977,18 +979,19 @@ bayes_p<-bayes_p%>%
 
 
 
-p<-ggplot(c_PPC, aes(x = c+1, y = c+1, color=factor(fit), groups=interaction(gear,section))) +
+c_PPC_plt<-ggplot(c_PPC, aes(x = c+1, y = c+1, color=factor(fit), groups=interaction(gear,section))) +
   facet_grid(cols=vars(section),rows=vars(gear)) +
   geom_errorbar(aes(ymin = `2.5%` + 1, ymax = `97.5%` + 1), width = 0,position = position_jitter(width = 0.05, height=0)) +
-  labs(x = "Observed E_s", y = "95% PPI") +
+  labs(x = "Observed Catch", y = "95% PPI") +
   geom_line(color="black") +
   scale_x_log10()+
   scale_y_log10()+
-  annotation_logticks()
+  annotation_logticks()+ 
+  theme_bw()
   #ylim(1, max(c_PPC$`97.5%`)) +
   #xlim(1, max(c_PPC$`97.5%`))
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "c_PPC.png"),
-       plot = p,
+       plot = c_PPC_plt,
        width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
        scale=1.75,
        units = c("in")
@@ -1033,16 +1036,17 @@ bayes_p<-bayes_p%>%
   )
 
 
-p<-ggplot(V_A_PPC, aes(x = V_A, y = V_A,color=fit)) +
+V_A_PPC_plt<-ggplot(V_A_PPC, aes(x = V_A, y = V_A,color=fit)) +
   facet_grid(cols=vars(gear)) +
   geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0,position = position_jitter(width = 0.1, height=0)) +
-  labs(x = "Observed V_A", y = "95% PPI") +
+  labs(x = "Observed Angler Group Vehicles", y = "95% PPI") +
   geom_line(color="black") +
   ylim(0, max(V_A_PPC$`97.5%`)) +
-  xlim(0, max(V_A_PPC$`97.5%`))
+  xlim(0, max(V_A_PPC$`97.5%`))+ 
+  theme_bw()
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "V_A_PPC.png"),
-       plot = p,
+       plot = V_A_PPC_plt,
        width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
        scale=1.75,
        units = c("in")
@@ -1088,16 +1092,17 @@ bayes_p<-bayes_p%>%
   )
 
 
-p<-ggplot(T_A_PPC, aes(x = T_A, y = T_A,color=fit)) +
+T_A_PPC_plt<-ggplot(T_A_PPC, aes(x = T_A, y = T_A,color=fit)) +
   facet_grid(cols=vars(gear)) +
   geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0,position = position_jitter(width = 0.1, height=0)) +
-  labs(x = "Observed T_A", y = "95% PPI") +
+  labs(x = "Observed Angler Group Trailers", y = "95% PPI") +
   geom_line(color="black") +
   ylim(0, max(T_A_PPC$`97.5%`)) +
-  xlim(0, max(T_A_PPC$`97.5%`))
+  xlim(0, max(T_A_PPC$`97.5%`))+
+  theme_bw()
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "T_A_PPC.png"),
-       plot = p,
+       plot = T_A_PPC_plt,
        width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
        scale=1.75,
        units = c("in")
@@ -1116,6 +1121,32 @@ bayes_p%>%
   #kableExtra::kable_classic(font="Times New Roman")%>%
   write.csv(file.path(here("fishery_analyses", params$project_name, params$fishery_name), "Bayes_p.csv"),row.names=F)
 
+
+p<-gridExtra::grid.arrange(
+  V_I_PPC_plt,
+  T_I_PPC_plt,
+  nrow=2
+)
+
+p2<-gridExtra::grid.arrange(
+  V_A_PPC_plt,
+  T_A_PPC_plt,
+  nrow=2
+)
+
+ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "VI_TI_PPC.png"),
+       plot = p,
+       width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
+       scale=1.75,
+       units = c("in")
+       )
+
+ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "VA_TA_PPC.png"),
+       plot = p2,
+       width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
+       scale=1.75,
+       units = c("in")
+       )
 
 ```
 
