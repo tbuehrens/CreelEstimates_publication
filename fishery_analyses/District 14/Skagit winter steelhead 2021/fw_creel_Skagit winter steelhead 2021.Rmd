@@ -775,7 +775,7 @@ V_I_PPC<-as.data.frame(apply(extract(stan_fit)$V_I_rep,2, function(x) quantile(x
   mutate(section = as.factor(section),
          day = as.factor(day),
          countnum = as.factor(countnum),
-         fit = factor(ifelse(V_I>=`2.5%` & V_I<=`97.5%`,"fit","no fit"))
+         fit = factor(ifelse(V_I>=`2.5%` & V_I<=`97.5%`,"fit","no fit"), levels = c("fit", "no fit"))
          )
 
 bayes_p<-V_I_PPC %>%
@@ -797,14 +797,17 @@ bayes_p<-V_I_PPC %>%
 
 
 
-V_I_PPC_plt<-ggplot(V_I_PPC, aes(x = V_I, y = V_I, color=section)) +
+V_I_PPC_plt<-ggplot(V_I_PPC, aes(x = V_I, y = V_I, color=fit)) +
   facet_grid(cols=vars(section)) +
   geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0,position = position_jitter(width=0.5,height=0)) +
   labs(x = "Observed Vehicle Counts", y = "95% PPI") +
   geom_line(color="black") +
   ylim(0, max(V_I_PPC$`97.5%`)) +
   xlim(0, max(V_I_PPC$`97.5%`)) + 
-  theme_bw()
+  theme_bw()+
+  scale_colour_manual(values=c("#F8766D","#619CFF"), 
+                      labels=c("fit", "no fit"), 
+                      drop=FALSE)
 
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "V_I_PPC.png"),
@@ -831,7 +834,7 @@ T_I_PPC<-as.data.frame(apply(extract(stan_fit)$T_I_rep,2, function(x) quantile(x
   mutate(section = as.factor(section),
          day = as.factor(day),
          countnum = as.factor(countnum),
-         fit = factor(ifelse(T_I>=`2.5%` & T_I<=`97.5%`,"fit","no fit"))
+         fit = factor(ifelse(T_I>=`2.5%` & T_I<=`97.5%`,"fit","no fit"),levels = c("fit", "no fit"))
          )
 
 bayes_p<-bayes_p%>%
@@ -855,14 +858,17 @@ bayes_p<-bayes_p%>%
 
 
 
-T_I_PPC_plt<-ggplot(T_I_PPC, aes(x = T_I, y = T_I, color=section)) +
+T_I_PPC_plt<-ggplot(T_I_PPC, aes(x = T_I, y = T_I, color=fit)) +
   facet_grid(cols=vars(section)) +
   geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0,position = position_jitter(width=0.5,height=0))  +
   labs(x = "Observed Trailer Counts", y = "95% PPI") +
   geom_line(color="black") +
   ylim(0, max(T_I_PPC$`97.5%`)) +
   xlim(0, max(T_I_PPC$`97.5%`)) +
-  theme_bw()
+  theme_bw()+
+  scale_colour_manual(values=c("#F8766D","#619CFF"), 
+                      labels=c("fit", "no fit"), 
+                      drop=FALSE)
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "T_I_PPC.png"),
        plot = T_I_PPC_plt,
@@ -894,8 +900,9 @@ E_s_PPC<-as.data.frame(apply(extract(stan_fit)$E_s_rep,2, function(x) quantile(x
          day = as.factor(day),
          gear= as.factor(gear),
          countnum = as.factor(countnum),
-         fit = factor(ifelse(E_s>=`2.5%` & E_s<=`97.5%`,"fit","no fit"))
+         fit = factor(ifelse(E_s>=`2.5%` & E_s<=`97.5%`,"fit","no fit"),levels=c("fit","no fit"))
          )
+
 bayes_p<-bayes_p%>%
   bind_rows(E_s_PPC %>%
     group_by(section, gear) %>%
@@ -917,14 +924,17 @@ bayes_p<-bayes_p%>%
 
 
 
-E_s_PPC_plt<-ggplot(E_s_PPC, aes(x = E_s, y = E_s, color=section, groups=gear)) +
+E_s_PPC_plt<-ggplot(E_s_PPC, aes(x = E_s, y = E_s, color=fit, groups=gear)) +
   facet_grid(cols=vars(section),rows=vars(gear)) +
   geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0, position = position_jitter(width=0.5,height=0)) +
   labs(x = "Observed Angler Counts", y = "95% PPI") +
   geom_line(color="black") +
   ylim(0, max(E_s_PPC$`97.5%`)) +
   xlim(0, max(E_s_PPC$`97.5%`))+ 
-  theme_bw()
+  theme_bw()+
+  scale_colour_manual(values=c("#F8766D","#619CFF"), 
+                      labels=c("fit", "no fit"), 
+                      drop=FALSE)
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "E_s_PPC.png"),
        plot = E_s_PPC_plt,
@@ -955,7 +965,7 @@ c_PPC<-as.data.frame(apply(extract(stan_fit)$c_rep,2, function(x) quantile(x, c(
   mutate(section = as.factor(section),
          day = as.factor(day),
          gear= as.factor(gear),
-         fit = ifelse(c>=`2.5%` & c<=`97.5%`,"fit","no fit")
+         fit = factor(ifelse(c>=`2.5%` & c<=`97.5%`,"fit","no fit"))
          )
 
 bayes_p<-bayes_p%>%
@@ -979,7 +989,7 @@ bayes_p<-bayes_p%>%
 
 
 
-c_PPC_plt<-ggplot(c_PPC, aes(x = c+1, y = c+1, color=factor(fit), groups=interaction(gear,section))) +
+c_PPC_plt<-ggplot(c_PPC, aes(x = c+1, y = c+1, color=fit, groups=interaction(gear,section))) +
   facet_grid(cols=vars(section),rows=vars(gear)) +
   geom_errorbar(aes(ymin = `2.5%` + 1, ymax = `97.5%` + 1), width = 0,position = position_jitter(width = 0.05, height=0)) +
   labs(x = "Observed Catch", y = "95% PPI") +
@@ -1013,7 +1023,7 @@ V_A_PPC<-as.data.frame(apply(extract(stan_fit)$V_A_rep,2, function(x) quantile(x
     )
   )%>%  
   mutate(gear= as.factor(gear),
-         fit = factor(ifelse(V_A>=`2.5%` & V_A<=`97.5%`,"fit","no fit"))
+         fit = factor(ifelse(V_A>=`2.5%` & V_A<=`97.5%`,"fit","no fit"),levels=c("fit", "no fit"))
          )
 
 bayes_p<-bayes_p%>%
@@ -1043,7 +1053,10 @@ V_A_PPC_plt<-ggplot(V_A_PPC, aes(x = V_A, y = V_A,color=fit)) +
   geom_line(color="black") +
   ylim(0, max(V_A_PPC$`97.5%`)) +
   xlim(0, max(V_A_PPC$`97.5%`))+ 
-  theme_bw()
+  theme_bw()+
+  scale_colour_manual(values=c("#F8766D","#619CFF"), 
+                      labels=c("fit", "no fit"), 
+                      drop=FALSE)
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "V_A_PPC.png"),
        plot = V_A_PPC_plt,
@@ -1068,7 +1081,7 @@ T_A_PPC<-as.data.frame(apply(extract(stan_fit)$T_A_rep,2, function(x) quantile(x
     )
   )%>%    
   mutate(gear= as.factor(gear),
-         fit = factor(ifelse(T_A>=`2.5%` & T_A<=`97.5%`,"fit","no fit"))
+         fit = factor(ifelse(T_A>=`2.5%` & T_A<=`97.5%`,"fit","no fit"),levels=c("fit","no fit"))
          )
 
 
@@ -1099,7 +1112,10 @@ T_A_PPC_plt<-ggplot(T_A_PPC, aes(x = T_A, y = T_A,color=fit)) +
   geom_line(color="black") +
   ylim(0, max(T_A_PPC$`97.5%`)) +
   xlim(0, max(T_A_PPC$`97.5%`))+
-  theme_bw()
+  theme_bw()+
+  scale_colour_manual(values=c("#F8766D","#619CFF"), 
+                      labels=c("fit", "no fit"), 
+                      drop=FALSE)
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name), "T_A_PPC.png"),
        plot = T_A_PPC_plt,
