@@ -82,6 +82,7 @@ library("suncalc")
 library("tidyverse")
 library("patchwork")
 library("gt")
+library("gridExtra")
 theme_set(theme_light())
 
 library("rstan")
@@ -741,16 +742,14 @@ if(nchar(params$output_location_filepath) > 1) {
 
 ## Posterior Predictive Check for BSS
 ```{r PPC, eval = FALSE}
-library(bayesplot)
-
-stan_fit<-readRDS(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, ".rds")))
+stan_fit<-readRDS(file.path(here::here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, ".rds")))
 
 
 sections<-dwg$effort |> 
   filter(location_type == "Section") |> 
   distinct(water_body, section_num, location) |> 
   arrange(section_num) |>
-  select(water_body,section=section_num,location)
+  dplyr::select(water_body,section=section_num,location)
 
 #write.csv(summary(stan_fit)$summary,file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_summary_", params$fishery_name, ".csv")))
 
@@ -805,7 +804,7 @@ V_I_PPC_plt<-ggplot(V_I_PPC, aes(x = V_I, y = V_I, color=fit)) +
   ylim(0, max(V_I_PPC$`97.5%`)) +
   xlim(0, max(V_I_PPC$`97.5%`)) + 
   theme_bw()+
-  scale_colour_manual(values=c("#F8766D","#619CFF"), 
+  scale_colour_manual(values=c("#F8766D","#00BFC4"), 
                       labels=c("fit", "no fit"), 
                       drop=FALSE)
 
@@ -866,7 +865,7 @@ T_I_PPC_plt<-ggplot(T_I_PPC, aes(x = T_I, y = T_I, color=fit)) +
   ylim(0, max(T_I_PPC$`97.5%`)) +
   xlim(0, max(T_I_PPC$`97.5%`)) +
   theme_bw()+
-  scale_colour_manual(values=c("#F8766D","#619CFF"), 
+  scale_colour_manual(values=c("#F8766D","#00BFC4"), 
                       labels=c("fit", "no fit"), 
                       drop=FALSE)
 
@@ -932,7 +931,7 @@ E_s_PPC_plt<-ggplot(E_s_PPC, aes(x = E_s, y = E_s, color=fit, groups=gear)) +
   ylim(0, max(E_s_PPC$`97.5%`)) +
   xlim(0, max(E_s_PPC$`97.5%`))+ 
   theme_bw()+
-  scale_colour_manual(values=c("#F8766D","#619CFF"), 
+  scale_colour_manual(values=c("#F8766D","#00BFC4"), 
                       labels=c("fit", "no fit"), 
                       drop=FALSE)
 
@@ -1056,7 +1055,7 @@ V_A_PPC_plt<-ggplot(V_A_PPC, aes(x = V_A, y = V_A,color=fit)) +
   ylim(0, max(V_A_PPC$`97.5%`)) +
   xlim(0, max(V_A_PPC$`97.5%`))+ 
   theme_bw()+
-  scale_colour_manual(values=c("#F8766D","#619CFF"), 
+  scale_colour_manual(values=c("#F8766D","#00BFC4"), 
                       labels=c("fit", "no fit"), 
                       drop=FALSE)
 
@@ -1115,7 +1114,7 @@ T_A_PPC_plt<-ggplot(T_A_PPC, aes(x = T_A, y = T_A,color=fit)) +
   ylim(0, max(T_A_PPC$`97.5%`)) +
   xlim(0, max(T_A_PPC$`97.5%`))+
   theme_bw()+
-  scale_colour_manual(values=c("#F8766D","#619CFF"), 
+  scale_colour_manual(values=c("#F8766D","#00BFC4"), 
                       labels=c("fit", "no fit"), 
                       drop=FALSE)
 
@@ -1193,7 +1192,8 @@ runsize_plt<-ggplot(data=runsize,aes(x=ensemble_forecast_posterior))+
    geom_vline(data=hcr%>%filter(MinRunsize!=0),mapping=aes(xintercept=MinRunsize),linetype="dashed")+
   xlab("Forecasted Run-Size")+
   ylab("Relative Probability")+
-  theme_bw()
+  theme_bw()+
+  xlim(0,12000)
 print(runsize_plt)
 
 
@@ -1239,7 +1239,6 @@ allowable_harvest_plt<-ggplot(data=AH,aes(x=AH,y=Exceedence))+
   theme_bw()+
   scale_x_log10(breaks = breaks, minor_breaks = minor_breaks)+
   annotation_logticks(base = 10,sides = "b")+
-  coord_equal() +
   ylab("Probability of Exceedance")+
   xlab("Allowable (State + Tribal) Co-manager Harvest (fish)")
 
@@ -1370,7 +1369,7 @@ total_CPUE_plt <- ggplot(season_results %>%
                summarise(value = quantile(value, c(0.025, 0.5, 0.975))),
              aes(xintercept = value),
              linetype = "dashed") +
-  theme(legend.title = element_blank(), lege)
+  theme(legend.title = element_blank())
 
 # Print the plots
 total_plt<-gridExtra::grid.arrange(
@@ -1379,7 +1378,6 @@ total_plt<-gridExtra::grid.arrange(
   total_CPUE_plt + guides(fill=FALSE),
   nrow=3
 )
-
 
 ```
 
@@ -1521,7 +1519,7 @@ ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$f
 
 
 
-prob_management_plt<-gridExtra::grid.arrange(
+prob_management_plt<-wrap_plots(
   tag_facet(runsize_plt, tag_pool="a",x =Inf, y = Inf,
                     hjust = 1.5,
                     open="(",
@@ -1546,9 +1544,13 @@ prob_management_plt<-gridExtra::grid.arrange(
                     hjust = 1.5,
                     open="(",
                     close=")"
-                    ),
-  nrow=2
-)
+                    )
+    )+
+  plot_layout(ncol = 2) +  # Set the number of columns in the layout
+  plot_layout(widths = c(3, 3), heights = c(3, 3))
+
+
+
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name),"prob_management_plt.png"),
        plot = prob_management_plt,
