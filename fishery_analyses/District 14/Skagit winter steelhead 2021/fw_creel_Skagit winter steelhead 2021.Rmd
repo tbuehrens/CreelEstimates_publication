@@ -991,12 +991,14 @@ bayes_p<-bayes_p%>%
 
 c_PPC_plt<-ggplot(c_PPC, aes(x = c+1, y = c+1, color=fit, groups=interaction(gear,section))) +
   facet_grid(cols=vars(section),rows=vars(gear)) +
-  geom_errorbar(aes(ymin = `2.5%` + 1, ymax = `97.5%` + 1), width = 0,position = position_jitter(width = 0.05, height=0)) +
+  geom_errorbar(aes(ymin = `2.5%` + 1, ymax = `97.5%` + 1), width = 0,position = position_jitter(width = 0.2, height=0)) +
   labs(x = "Observed Catch", y = "95% PPI") +
   geom_line(color="black") +
-  scale_x_log10()+
-  scale_y_log10()+
-  annotation_logticks()+ 
+  #scale_x_log10()+
+  #scale_y_log10()+
+  #annotation_logticks()+ 
+  scale_y_continuous(breaks = seq(1, 10, by = 1))+
+  scale_x_continuous(breaks = seq(1, 10, by = 1))+
   theme_bw()
   #ylim(1, max(c_PPC$`97.5%`)) +
   #xlim(1, max(c_PPC$`97.5%`))
@@ -1048,7 +1050,7 @@ bayes_p<-bayes_p%>%
 
 V_A_PPC_plt<-ggplot(V_A_PPC, aes(x = V_A, y = V_A,color=fit)) +
   facet_grid(cols=vars(gear)) +
-  geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0,position = position_jitter(width = 0.1, height=0)) +
+  geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0,position = position_jitter(width = 0.2, height=0)) +
   labs(x = "Observed Angler Group Vehicles", y = "95% PPI") +
   geom_line(color="black") +
   ylim(0, max(V_A_PPC$`97.5%`)) +
@@ -1107,7 +1109,7 @@ bayes_p<-bayes_p%>%
 
 T_A_PPC_plt<-ggplot(T_A_PPC, aes(x = T_A, y = T_A,color=fit)) +
   facet_grid(cols=vars(gear)) +
-  geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0,position = position_jitter(width = 0.1, height=0)) +
+  geom_errorbar(aes(ymin = `2.5%`, ymax = `97.5%`), width = 0,position = position_jitter(width = 0.2, height=0)) +
   labs(x = "Observed Angler Group Trailers", y = "95% PPI") +
   geom_line(color="black") +
   ylim(0, max(T_A_PPC$`97.5%`)) +
