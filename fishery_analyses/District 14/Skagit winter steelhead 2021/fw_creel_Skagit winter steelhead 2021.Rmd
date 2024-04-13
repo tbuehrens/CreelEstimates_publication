@@ -120,7 +120,13 @@ if(params$day_length_expansion == "manual"){
 # Fetch raw data
 
 ```{r dwg_fetch, echo=FALSE}
-dwg <- fetch_dwg(params$fishery_name)
+if(!file.exists(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("dwg_", params$fishery_name, ".rds")))){
+  dwg <- fetch_dwg(params$fishery_name)
+  saveRDS(dwg,file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("dwg_", params$fishery_name, ".rds")))
+  
+}else{
+  dwg<-readRDS(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("dwg_", params$fishery_name, ".rds")))
+}
 
 dwg$days <- prep_days(
   date_begin = params$est_date_start, 
