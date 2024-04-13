@@ -1441,27 +1441,86 @@ This table and the figures below it show estimates of the season total catch and
 total_effort_catch_tbl<-estimates_bss %>%
   map_df(~ .x$overview) 
 
-total_effort_catch_tbl|>
-  write.csv(file.path(here("fishery_analyses", params$project_name, params$fishery_name),"total_effort_catch_tbl.csv"),row.names = F)
+
 
 total_effort_catch_tbl%>%
   kableExtra::kbl(caption = "Table 3. Total Catch (fish) and Effort (hours). The 'best' estimate is the median or 50th percentile. The table shows the percentiles of estimated catch and effort, which represent the probability that the true catch or effort is below a particular value. For example, there is a 50% probability the true catch is below the 50th percentile of the estimated catch in this table.", digits = 1) %>%
   kableExtra::kable_classic(full_width = FALSE, html_font = "Cambria")
 
-```
 
 
-```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 5. Season total catch (fish) and effort (angler hours). The middle dashed line shows the posterior median or 'best' estimate. Outer dashed lines show 95 percent credible intervals."),echo=FALSE,warning = FALSE}
 res<-rstan::extract(stan_fit)
+
+#Seasonal median CPUE gear section
+median_CPUE_gear_section<-apply(exp(res$mu_C),2:3,function (x) c(mean=mean(x),sd=sd(x),quantile(x,c(0.025,0.25,0.5,0.75,0.975))))%>%
+  reshape2::melt()%>%
+  rename(Q=Var1,gear=Var2,section=Var3,CPUE=value)%>%
+  as_tibble()%>%
+  pivot_wider(names_from = Q,values_from = CPUE)%>%
+  left_join(sections)%>%
+  select(-section,-location)%>%
+  rename(section=water_body)%>%
+  mutate(gear=ifelse(gear==1,"Bank Anglers","Boat Anglers"),
+         Parameter ="seasonal median CPUE"
+         )%>%
+  select(Parameter,section,gear,mean,sd,`2.5%`,`25%`,`50%`,`75%`,`97.5%`)
+
+
+#Seasonal total catch gear section
+catch_gear_section<-apply(apply(res$C,c(1,2,4),sum), 2:3,function (x) c(mean=mean(x),sd=sd(x),quantile(x,c(0.025,0.25,0.5,0.75,0.975))))%>%
+  reshape2::melt()%>%
+  rename(Q=Var1,section=Var2,gear=Var3,catch=value)%>%
+  as_tibble()%>%
+  pivot_wider(names_from = Q,values_from = catch)%>%
+  left_join(sections)%>%
+  select(-section,-location)%>%
+  rename(section=water_body)%>%
+  mutate(gear=ifelse(gear==1,"Bank Anglers","Boat Anglers"),
+         Parameter ="season total catch"
+         )%>%
+  select(Parameter,section,gear,mean,sd,`2.5%`,`25%`,`50%`,`75%`,`97.5%`)
+
+
+#Seasonal total catch gear section
+effort_gear_section<-apply(apply(res$E,c(1,2,4),sum), 2:3,function (x) c(mean=mean(x),sd=sd(x),quantile(x,c(0.025,0.25,0.5,0.75,0.975))))%>%
+  reshape2::melt()%>%
+  rename(Q=Var1,section=Var2,gear=Var3,effort=value)%>%
+  as_tibble()%>%
+  pivot_wider(names_from = Q,values_from = effort)%>%
+  left_join(sections)%>%
+  select(-section,-location)%>%
+  rename(section=water_body)%>%
+  mutate(gear=ifelse(gear==1,"Bank Anglers","Boat Anglers"),
+         Parameter = "season total effort"
+         )%>%
+  select(Parameter,section,gear,mean,sd,`2.5%`,`25%`,`50%`,`75%`,`97.5%`)
+
 
 season_results<-data.frame(res$C_sum,res$E_sum)%>%
   mutate(iter=row_number())%>%
   as_tibble()%>%
   rename(`Season Total Catch`=res.C_sum,`Season Total Effort`=res.E_sum)%>%
-  mutate(`Seasonal CPUE` = `Season Total Catch`/`Season Total Effort`)%>%
-  pivot_longer(names_to = "Parameter",values_to="value",cols=c(`Season Total Catch`,`Season Total Effort`,`Seasonal CPUE`))
+  mutate(`Seasonal Mean CPUE` = `Season Total Catch`/`Season Total Effort`)%>%
+  pivot_longer(names_to = "Parameter",values_to="value",cols=c(`Season Total Catch`,`Season Total Effort`,`Seasonal Mean CPUE`))%>%
+  group_by(Parameter)%>%
+  summarise(mean=mean(value), 
+            sd=sd(value),
+            v=quantile(value,c(0.025,0.25,0.5,0.75,0.975)),
+            q=c("2.5%","25%","50%","75%","97.5%")
+            )%>%
+  pivot_wider(names_from = q,values_from = v)%>%
+  mutate(gear="Total",section="Total")%>%
+  bind_rows(catch_gear_section)%>%
+  bind_rows(effort_gear_section)%>%
+  bind_rows(median_CPUE_gear_section)%>%
+  select(Parameter,section,gear,mean,sd,`2.5%`,`25%`,`50%`,`75%`,`97.5%`)%>%
+  write.csv(file.path(here("fishery_analyses", params$project_name, params$fishery_name),"total_effort_catch_tbl.csv"),row.names = F)
 
 
+```
+
+
+```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 5. Season total catch (fish) and effort (angler hours). The middle dashed line shows the posterior median or 'best' estimate. Outer dashed lines show 95 percent credible intervals."),echo=FALSE,warning = FALSE}
 total_catch_plt <- ggplot(season_results %>% 
                              filter(Parameter == "Season Total Catch")
                            , aes(x = value, fill = Parameter)
