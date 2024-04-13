@@ -763,6 +763,136 @@ sections<-dwg$effort |>
 # 
 # write.csv(summary(stan_fit)$summary,file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_summary_", params$fishery_name, "_ZINB.csv")))
 
+V_I_pvalue<-extract(stan_fit)$V_I_rep%>%
+  reshape2::melt()%>%
+  dplyr::rename(V_n=Var2)%>%
+  left_join(
+    tibble(
+      V_I=inputs_bss[[ecg]]$V_I,
+      V_n = 1:inputs_bss[[ecg]]$V_n, 
+    )
+  )%>%
+  group_by(iterations)%>%
+  summarise(
+    mean_gt=ifelse(mean(value)>mean(V_I),1,0),
+    sd_gt=ifelse(sd(value)>sd(V_I),1,0)
+  )%>%
+  ungroup()%>%
+  summarise(
+    mean_gt=sum(mean_gt)/n(),
+    sd_gt=sum(sd_gt)/n()
+  )
+
+
+T_I_pvalue<-extract(stan_fit)$T_I_rep%>%
+  reshape2::melt()%>%
+  dplyr::rename(T_n=Var2)%>%
+  left_join(
+    tibble(
+      T_I=inputs_bss[[ecg]]$T_I,
+      T_n = 1:inputs_bss[[ecg]]$T_n, 
+    )
+  )%>%
+  group_by(iterations)%>%
+  summarise(
+    mean_gt=ifelse(mean(value)>mean(T_I),1,0),
+    sd_gt=ifelse(sd(value)>sd(T_I),1,0)
+  )%>%
+  ungroup()%>%
+  summarise(
+    mean_gt=sum(mean_gt)/n(),
+    sd_gt=sum(sd_gt)/n()
+  )
+
+
+
+E_s_pvalue<-extract(stan_fit)$E_s_rep%>%
+  reshape2::melt()%>%
+  dplyr::rename(E_n=Var2)%>%
+  left_join(
+    tibble(
+      E_s=inputs_bss[[ecg]]$E_s,
+      E_n = 1:inputs_bss[[ecg]]$E_n, 
+    )
+  )%>%
+  group_by(iterations)%>%
+  summarise(
+    mean_gt=ifelse(mean(value)>mean(E_s),1,0),
+    sd_gt=ifelse(sd(value)>sd(E_s),1,0)
+  )%>%
+  ungroup()%>%
+  summarise(
+    mean_gt=sum(mean_gt)/n(),
+    sd_gt=sum(sd_gt)/n()
+  )
+
+
+c_pvalue<-extract(stan_fit)$c_rep%>%
+  reshape2::melt()%>%
+  dplyr::rename(IntC=Var2)%>%
+  left_join(
+    tibble(
+      c=inputs_bss[[ecg]]$c,
+      IntC = 1:inputs_bss[[ecg]]$IntC, 
+    )
+  )%>%
+  group_by(iterations)%>%
+  summarise(
+    mean_gt=ifelse(mean(value)>mean(c),1,0),
+    sd_gt=ifelse(sd(value)>sd(c),1,0)
+  )%>%
+  ungroup()%>%
+  summarise(
+    mean_gt=sum(mean_gt)/n(),
+    sd_gt=sum(sd_gt)/n()
+  )
+
+
+V_A_pvalue<-extract(stan_fit)$V_A_rep%>%
+  reshape2::melt()%>%
+  dplyr::rename(IntA=Var2)%>%
+  left_join(
+    tibble(
+      V_A=inputs_bss[[ecg]]$V_A,
+      IntA = 1:inputs_bss[[ecg]]$IntA, 
+    )
+  )%>%
+  group_by(iterations)%>%
+  summarise(
+    mean_gt=ifelse(mean(value)>mean(V_A),1,0),
+    sd_gt=ifelse(sd(value)>sd(V_A),1,0)
+  )%>%
+  ungroup()%>%
+  summarise(
+    mean_gt=sum(mean_gt)/n(),
+    sd_gt=sum(sd_gt)/n()
+  )
+
+
+T_A_pvalue<-extract(stan_fit)$T_A_rep%>%
+  reshape2::melt()%>%
+  dplyr::rename(IntA=Var2)%>%
+  left_join(
+    tibble(
+      T_A=inputs_bss[[ecg]]$T_A,
+      IntA = 1:inputs_bss[[ecg]]$IntA, 
+    )
+  )%>%
+  group_by(iterations)%>%
+  summarise(
+    mean_gt=ifelse(mean(value)>mean(T_A),1,0),
+    sd_gt=ifelse(sd(value)>sd(T_A),1,0)
+  )%>%
+  ungroup()%>%
+  summarise(
+    mean_gt=sum(mean_gt)/n(),
+    sd_gt=sum(sd_gt)/n()
+  )
+```
+
+# Posterior Predictive Checks and Interval Coverage
+```{r}
+
 # Perform posterior predictive checks
 V_I_PPC<-as.data.frame(apply(extract(stan_fit)$V_I_rep,2, function(x) quantile(x, c(0.025,0.975))))%>%
   rownames_to_column(var="Quantile")%>%
@@ -783,20 +913,20 @@ V_I_PPC<-as.data.frame(apply(extract(stan_fit)$V_I_rep,2, function(x) quantile(x
          fit = factor(ifelse(V_I>=`2.5%` & V_I<=`97.5%`,"fit","no fit"), levels = c("fit", "no fit"))
          )
 
-bayes_p<-V_I_PPC %>%
+p_fit<-V_I_PPC %>%
   group_by(section) %>%
   summarise(
     fit_count = sum(fit == "fit"),
     no_fit_count = sum(fit == "no fit"),
     total_count = fit_count + no_fit_count,
-    bayes_p = ifelse(no_fit_count == 0, 1, fit_count / total_count)
+    p_fit = ifelse(no_fit_count == 0, 1, fit_count / total_count)
   ) %>%
   ungroup()%>%
   add_row(section = "Total",
           fit_count = sum(.$fit_count),
           no_fit_count = sum(.$no_fit_count),
           total_count = sum(.$total_count),
-          bayes_p = ifelse(sum(.$no_fit_count) == 0, 1, sum(.$fit_count) / sum(.$total_count))
+          p_fit = ifelse(sum(.$no_fit_count) == 0, 1, sum(.$fit_count) / sum(.$total_count)),
   ) %>%
   mutate(Parameter = "V_I_PPC")
 
@@ -842,21 +972,21 @@ T_I_PPC<-as.data.frame(apply(extract(stan_fit)$T_I_rep,2, function(x) quantile(x
          fit = factor(ifelse(T_I>=`2.5%` & T_I<=`97.5%`,"fit","no fit"),levels = c("fit", "no fit"))
          )
 
-bayes_p<-bayes_p%>%
+p_fit<-p_fit%>%
   bind_rows(T_I_PPC %>%
     group_by(section) %>%
     summarise(
       fit_count = sum(fit == "fit"),
       no_fit_count = sum(fit == "no fit"),
       total_count = fit_count + no_fit_count,
-      bayes_p = ifelse(no_fit_count == 0, 1, fit_count / total_count)
+      p_fit = ifelse(no_fit_count == 0, 1, fit_count / total_count)
     ) %>%
     ungroup()%>%
     add_row(section = "Total",
             fit_count = sum(.$fit_count),
             no_fit_count = sum(.$no_fit_count),
             total_count = sum(.$total_count),
-            bayes_p = ifelse(sum(.$no_fit_count) == 0, 1, sum(.$fit_count) / sum(.$total_count))
+            p_fit = ifelse(sum(.$no_fit_count) == 0, 1, sum(.$fit_count) / sum(.$total_count))
     ) %>%
     mutate(Parameter = "T_I_PPC")
   )
@@ -908,21 +1038,21 @@ E_s_PPC<-as.data.frame(apply(extract(stan_fit)$E_s_rep,2, function(x) quantile(x
          fit = factor(ifelse(E_s>=`2.5%` & E_s<=`97.5%`,"fit","no fit"),levels=c("fit","no fit"))
          )
 
-bayes_p<-bayes_p%>%
+p_fit<-p_fit%>%
   bind_rows(E_s_PPC %>%
     group_by(section, gear) %>%
     summarise(
       fit_count = sum(fit == "fit"),
       no_fit_count = sum(fit == "no fit"),
       total_count = fit_count + no_fit_count,
-      bayes_p = ifelse(no_fit_count == 0, 1, fit_count / total_count)
+      p_fit = ifelse(no_fit_count == 0, 1, fit_count / total_count)
     ) %>%
     ungroup()%>%
     add_row(section = "Total", gear ="Total",
             fit_count = sum(.$fit_count),
             no_fit_count = sum(.$no_fit_count),
             total_count = sum(.$total_count),
-            bayes_p = ifelse(sum(.$no_fit_count) == 0, 1, sum(.$fit_count) / sum(.$total_count))
+            p_fit = ifelse(sum(.$no_fit_count) == 0, 1, sum(.$fit_count) / sum(.$total_count))
     ) %>%
     mutate(Parameter = "E_s_PPC")
   )
@@ -973,21 +1103,21 @@ c_PPC<-as.data.frame(apply(extract(stan_fit)$c_rep,2, function(x) quantile(x, c(
          fit = factor(ifelse(c>=`2.5%` & c<=`97.5%`,"fit","no fit"))
          )
 
-bayes_p<-bayes_p%>%
+p_fit<-p_fit%>%
   bind_rows(c_PPC%>%
     group_by(section, gear) %>%
     summarise(
       fit_count = sum(fit == "fit"),
       no_fit_count = sum(fit == "no fit"),
       total_count = fit_count + no_fit_count,
-      bayes_p = ifelse(no_fit_count == 0, 1, fit_count / total_count)
+      p_fit = ifelse(no_fit_count == 0, 1, fit_count / total_count)
     ) %>%
     ungroup()%>%
     add_row(section = "Total", gear ="Total",
             fit_count = sum(.$fit_count),
             no_fit_count = sum(.$no_fit_count),
             total_count = sum(.$total_count),
-            bayes_p = ifelse(sum(.$no_fit_count) == 0, 1, sum(.$fit_count) / sum(.$total_count))
+            p_fit = ifelse(sum(.$no_fit_count) == 0, 1, sum(.$fit_count) / sum(.$total_count))
     )%>%
     mutate(Parameter = "c_PPC")
   )
@@ -1033,21 +1163,21 @@ V_A_PPC<-as.data.frame(apply(extract(stan_fit)$V_A_rep,2, function(x) quantile(x
          fit = factor(ifelse(V_A>=`2.5%` & V_A<=`97.5%`,"fit","no fit"),levels=c("fit", "no fit"))
          )
 
-bayes_p<-bayes_p%>%
+p_fit<-p_fit%>%
   bind_rows(V_A_PPC %>%
     group_by(gear) %>%
     summarise(
       fit_count = sum(fit == "fit"),
       no_fit_count = sum(fit == "no fit"),
       total_count = fit_count + no_fit_count,
-      bayes_p = ifelse(no_fit_count == 0, 1, fit_count / total_count)
+      p_fit = ifelse(no_fit_count == 0, 1, fit_count / total_count)
     ) %>%
     ungroup()%>%
     add_row(gear ="Total",
             fit_count = sum(.$fit_count),
             no_fit_count = sum(.$no_fit_count),
             total_count = sum(.$total_count),
-            bayes_p = ifelse(sum(.$no_fit_count) == 0, 1, sum(.$fit_count) / sum(.$total_count))
+            p_fit = ifelse(sum(.$no_fit_count) == 0, 1, sum(.$fit_count) / sum(.$total_count))
     )%>%
     mutate(Parameter = "V_A_PPC")
   )
@@ -1092,21 +1222,21 @@ T_A_PPC<-as.data.frame(apply(extract(stan_fit)$T_A_rep,2, function(x) quantile(x
          )
 
 
-bayes_p<-bayes_p%>%
+p_fit<-p_fit%>%
   bind_rows(T_A_PPC %>%
     group_by(gear) %>%
     summarise(
       fit_count = sum(fit == "fit"),
       no_fit_count = sum(fit == "no fit"),
       total_count = fit_count + no_fit_count,
-      bayes_p = ifelse(no_fit_count == 0, 1, fit_count / total_count)
+      p_fit = ifelse(no_fit_count == 0, 1, fit_count / total_count)
     )%>%
     ungroup()%>%
     add_row(gear = "Total", 
             fit_count = sum(.$fit_count),
             no_fit_count = sum(.$no_fit_count),
             total_count = sum(.$total_count),
-            bayes_p = ifelse(sum(.$no_fit_count) == 0, 1, sum(.$fit_count) / sum(.$total_count))
+            p_fit = ifelse(sum(.$no_fit_count) == 0, 1, sum(.$fit_count) / sum(.$total_count))
     ) %>%
     mutate(Parameter = "T_A_PPC")
   )
@@ -1131,18 +1261,18 @@ ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$f
        units = c("in")
        )
 
-bayes_p%>%
+p_fit%>%
   dplyr::select(Parameter,
                 Section = section,
                 Gear = gear,
                 `Fit count` = fit_count,
                 `No fit count` = no_fit_count,
                 `Total n` = total_count,
-                `p-value` = bayes_p
+                `2.5% Q > Pr.(obs) < 97.5% Q` = p_fit
                 )%>%
   #kableExtra::kbl()%>%
   #kableExtra::kable_classic(font="Times New Roman")%>%
-  write.csv(file.path(here("fishery_analyses", params$project_name, params$fishery_name), "Bayes_p.csv"),row.names=F)
+  write.csv(file.path(here("fishery_analyses", params$project_name, params$fishery_name), "p_fit.csv"),row.names=F)
 
 
 p<-gridExtra::grid.arrange(
