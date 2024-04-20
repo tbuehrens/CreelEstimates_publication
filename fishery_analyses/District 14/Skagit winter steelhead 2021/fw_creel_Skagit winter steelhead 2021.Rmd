@@ -713,7 +713,6 @@ map_df(estimates_bss, ~.x$overview) |>
 
 
 # Save results
-
 ```{r write_out_results, eval = FALSE}
 # bss_overview <- estimates_bss$summary_by_catchgroup
 #write out a workbook with results from model runs 
@@ -757,7 +756,7 @@ sections<-dwg$effort |>
   arrange(section_num) |>
   dplyr::select(water_body,section=section_num,location)
 
-#write.csv(summary(stan_fit)$summary,file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_summary_", params$fishery_name, ".csv")))
+# write.csv(summary(stan_fit)$summary,file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_summary_", params$fishery_name, ".csv")))
 
 # stan_fit<-readRDS(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name, "_ZINB.rds")))
 # 
@@ -1316,7 +1315,7 @@ hcr%>%mutate(MaxRunsize=format(MaxRunsize, scientific = FALSE))%>%
   kableExtra::kable_classic(full_width = F, html_font = "Cambria")
 ```
 
-The run size forecast is below, and is reprinted from the co-manager agreed-to [**pre-season forecast**](https://github.com/tbuehrens/Skagit-River-Steelhead-Forecast/blob/master/analysis/App_2_Model_fitting_forecast_2020_2021_step_head_fcst.pdf). A published scientific paper describing the methods may be found here: [**(preseason forecast publication)**](https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/1365-2664.13789).
+The run size forecast is below, and is reprinted from the co-manager agreed-to [**pre-season forecast**](https:#github.com/tbuehrens/Skagit-River-Steelhead-Forecast/blob/master/analysis/App_2_Model_fitting_forecast_2020_2021_step_head_fcst.pdf). A published scientific paper describing the methods may be found here: [**(preseason forecast publication)**](https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/1365-2664.13789).
 
 For more details on how this forecast was developed, see this [**GitHub repository**](https://github.com/casruff/Skagit-River-Steelhead-Forecast), which is collaboratively maintained by tribal Co-Managers & WDFW.
 
@@ -1753,12 +1752,107 @@ ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$f
        scale=1.75,
        units = c("in")
        )
-
-
-
 ```
 
 
+# Data Quantity Sensitivity analysis
+```{r}
+
+inputs_bss <- readRDS(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_data_", params$fishery_name, ".rds")))
+
+paths<-c(NULL)
+for(i in 1: 2){ #loop through interview and index effort data 100% = 1, 50% = 2
+  if(i==1){
+    I="_I_ALL"
+  }
+  if(i==2){
+   I="_I_EVEN"
+   tdat<-inputs_bss$Steelhead_NA_UM_Released  
+   
+   #Vehicle index effort counts
+   V_even_indices <- which(tdat$day_V %% 2 == 0)
+	 tdat$V_n<-length(V_even_indices); 
+	 tdat$day_V<-tdat$day_V[V_even_indices]; 
+	 tdat$section_V<-tdat$section_V[V_even_indices];  
+	 tdat$countnum_V<-tdat$countnum_V[V_even_indices];
+	 tdat$V_I<-tdat$V_I[V_even_indices];
+	
+	 #Trailer index effort counts 
+	 T_even_indices <- which(tdat$day_T %% 2 == 0)
+	 tdat$T_n<-length(T_even_indices);
+	 tdat$day_T<-tdat$day_T[T_even_indices]; 
+	 tdat$section_T<-tdat$section_T[T_even_indices];  
+	 tdat$countnum_T<-tdat$countnum_T[T_even_indices];
+	 tdat$T_I<-tdat$T_I[T_even_indices];
+	
+	#interview data - CPUE
+	 IntC_even_indices <- which(tdat$day_IntC %% 2 == 0)
+	 tdat$IntC<-length(IntC_even_indices);
+	 tdat$day_IntC<-tdat$day_IntC[IntC_even_indices]; 
+	 tdat$gear_IntC<-tdat$gear_IntC[IntC_even_indices];
+	 tdat$section_IntC<-tdat$section_IntC[IntC_even_indices];  
+   tdat$c<-tdat$c[IntC_even_indices];
+	 tdat$c<-tdat$h[IntC_even_indices];  
+	 
+	#interview data - angler expansion
+	 IntA_even_indices <- which(tdat$day_IntA %% 2 == 0)
+	 tdat$IntA<-length(IntA_even_indices);
+	 tdat$day_IntA<-tdat$day_IntA[IntA_even_indices]; 
+	 tdat$gear_IntA<-tdat$gear_IntA[IntA_even_indices];
+	 tdat$section_IntA<-tdat$section_IntA[IntA_even_indices];  
+	 tdat$V_A<-tdat$V_A[IntA_even_indices];
+	 tdat$T_A<-tdat$T_A[IntA_even_indices];
+	 tdat$A_A<-tdat$A_A[IntA_even_indices];
+  }
+  for(j in 1:3){ #loop through census effort data 100% = 1, 60% = 2, 20% = 3
+    if(j==1){
+      E="_E_ALL"
+      if(i==1 & j==1){
+        next
+      }
+    }
+    if(j==2){
+      E="_E_135"
+      E_n_1_3_5_indices<-which(tdat$day_E %in% (tdat$day_E %>% unique() %>% .[c(1, 3, 5)]))
+      tdat$E_n <-length(E_n_1_3_5_indices); 
+      tdat$day_E<-tdat$day_E[E_n_1_3_5_indices]
+      tdat$gear_E<-tdat$gear_E[E_n_1_3_5_indices]
+      tdat$section_E<-tdat$section_E[E_n_1_3_5_indices]
+      tdat$countnum_E<-tdat$countnum_E[E_n_1_3_5_indices] 
+      tdat$E_s<-tdat$E_s[E_n_1_3_5_indices] 
+    }
+    if(j==3){
+      E="_E_3"
+      E_n_3_indices<-which(tdat$day_E %in% (tdat$day_E %>% unique() %>% .[c(3)]))
+      tdat$E_n <-length(E_n_1_3_5_indices); 
+      tdat$day_E<-tdat$day_E[E_n_1_3_5_indices]
+      tdat$gear_E<-tdat$gear_E[E_n_1_3_5_indices]
+      tdat$section_E<-tdat$section_E[E_n_1_3_5_indices]
+      tdat$countnum_E<-tdat$countnum_E[E_n_1_3_5_indices] 
+      tdat$E_s<-tdat$E_s[E_n_1_3_5_indices] 
+    }
+    filepath<-file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_data_", params$fishery_name,I,E,".rds"))
+    saveRDS(tdat,filepath)
+    bss_fit_file <- file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name,I,E,".rds"))
+    if (!file.exists(bss_fit_file)) {
+      tryCatch({
+        ecg_fit <- fit_bss(
+          bss_inputs_list = filepath,
+          n_chain = 4,  
+          n_cores = 4,
+          n_iter = 2000,
+          n_warmup = 1000,
+          n_thin = 1,
+          adapt_delta = 0.8,
+          max_treedepth = 10,
+          init = "0"
+        )
+        saveRDS(ecg_fit, bss_fit_file)
+      })
+    }
+  }
+}
+```
 
 
 
