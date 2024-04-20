@@ -1823,21 +1823,23 @@ for(i in 1: 2){ #loop through interview and index effort data 100% = 1, 50% = 2
     if(j==3){
       E="_E_3"
       E_n_3_indices<-which(tdat$day_E %in% (tdat$day_E %>% unique() %>% .[c(3)]))
-      tdat$E_n <-length(E_n_1_3_5_indices); 
-      tdat$day_E<-tdat$day_E[E_n_1_3_5_indices]
-      tdat$gear_E<-tdat$gear_E[E_n_1_3_5_indices]
-      tdat$section_E<-tdat$section_E[E_n_1_3_5_indices]
-      tdat$countnum_E<-tdat$countnum_E[E_n_1_3_5_indices] 
-      tdat$E_s<-tdat$E_s[E_n_1_3_5_indices] 
+      tdat$E_n <-length(E_n_3_indices); 
+      tdat$day_E<-tdat$day_E[E_n_3_indices]
+      tdat$gear_E<-tdat$gear_E[E_n_3_indices]
+      tdat$section_E<-tdat$section_E[E_n_3_indices]
+      tdat$countnum_E<-tdat$countnum_E[E_n_3_indices] 
+      tdat$E_s<-tdat$E_s[E_n_3_indices] 
     }
     filepath<-file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_data_", params$fishery_name,I,E,".rds"))
     saveRDS(tdat,filepath)
     bss_fit_file <- file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name,I,E,".rds"))
+    
+    print(paste("on ",I,E))
     if (!file.exists(bss_fit_file)) {
       tryCatch({
         ecg_fit <- fit_bss(
           bss_inputs_list = readRDS(filepath),
-          n_chain = 4,  
+          n_chain = 4,
           n_cores = 4,
           n_iter = 2000,
           n_warmup = 1000,
