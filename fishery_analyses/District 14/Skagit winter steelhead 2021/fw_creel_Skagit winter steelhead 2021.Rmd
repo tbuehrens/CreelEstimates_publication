@@ -1760,7 +1760,8 @@ ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$f
 
 inputs_bss <- readRDS(file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_data_", params$fishery_name, ".rds")))
 
-paths<-c(NULL)
+results<-list(NULL)
+counter<-0
 for(i in 1: 2){ #loop through interview and index effort data 100% = 1, 50% = 2
   tdat<-inputs_bss$Steelhead_NA_UM_Released  
   if(i==1){
@@ -1851,8 +1852,20 @@ for(i in 1: 2){ #loop through interview and index effort data 100% = 1, 50% = 2
         saveRDS(ecg_fit, bss_fit_file)
       })
     }
+    counter<-counter+1
+    path<-file.path(here("fishery_analyses", params$project_name, params$fishery_name), paste0("bss_fit_", params$fishery_name,I,E,".rds"))
+    results[[counter]]<-rstan::extract(readRDS(path))
   }
 }
+
+lapply(results, function(x) {
+  totals=tibble(
+    C_sum=c(mean(x$C_sum), sd(x$C_sum), quantile(x$C_sum, c(0.025, 0.25, 0.5, 0.75, 0.975))),
+    E_sum=c(mean(x$E_sum), sd(x$E_sum), quantile(x$E_sum, c(0.025, 0.25, 0.5, 0.75, 0.975)))
+  )
+})
+
+
 ```
 
 
