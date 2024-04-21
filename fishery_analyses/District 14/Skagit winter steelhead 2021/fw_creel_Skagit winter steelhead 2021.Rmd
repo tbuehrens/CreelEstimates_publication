@@ -1907,7 +1907,8 @@ CQV<-ggplot(summary_stats,aes(y=CQV,x=E,color=factor(I),group=interaction(I,para
   ylab("Precision (Coefficient of Quartile Variation)")+
   geom_point(size=3)+
   xlab("Census Effort Count Flights")+
-  geom_line()
+  geom_line()+
+  theme(strip.text = element_text(size = 14))
 
 bias<-ggplot(summary_stats,aes(y=abs(bias),x=E,color=factor(I),group=interaction(I,parameter)))+
   facet_wrap(~parameter,scales="free",nrow=2)+
@@ -1916,7 +1917,8 @@ bias<-ggplot(summary_stats,aes(y=abs(bias),x=E,color=factor(I),group=interaction
   geom_point(size=3)+
   labs(color = "Interview and Index \nEffort Count Days")+
   xlab("Census Effort Count Flights")+
-  geom_line()
+  geom_line()+
+  theme(strip.text = element_text(size = 14))
 
 
 power_plt<-patchwork::wrap_plots(
