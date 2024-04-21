@@ -1791,7 +1791,7 @@ for(i in 1: 2){ #loop through interview and index effort data 100% = 1, 50% = 2
 	 tdat$gear_IntC<-tdat$gear_IntC[IntC_even_indices];
 	 tdat$section_IntC<-tdat$section_IntC[IntC_even_indices];  
    tdat$c<-tdat$c[IntC_even_indices];
-	 tdat$c<-tdat$h[IntC_even_indices];  
+	 tdat$h<-tdat$h[IntC_even_indices];  
 	 
 	#interview data - angler expansion
 	 IntA_even_indices <- which(tdat$day_IntA %% 2 == 0)
