@@ -1808,7 +1808,7 @@ for(i in 1: 2){ #loop through interview and index effort data 100% = 1, 50% = 2
     if(j==1){
       E="_E_ALL"
       if(i==1 & j==1){
-        next
+        #next
       }
     }
     if(j==2){
@@ -1842,8 +1842,8 @@ for(i in 1: 2){ #loop through interview and index effort data 100% = 1, 50% = 2
           bss_inputs_list = readRDS(filepath),
           n_chain = 4,
           n_cores = 4,
-          n_iter = 2000,
-          n_warmup = 1000,
+          n_iter = 4000,
+          n_warmup = 2000,
           n_thin = 1,
           adapt_delta = 0.8,
           max_treedepth = 10,
@@ -1902,7 +1902,7 @@ print(summary_stats)
 
 
 CQV<-ggplot(summary_stats,aes(y=CQV,x=E,color=factor(I),group=interaction(I,parameter)))+
-  facet_wrap(~parameter,scales="free",nrow=2)+
+  facet_wrap(~parameter,nrow=2)+ # scales="free"
   scale_y_continuous(labels = scales::percent_format(),limits = c(0,NA)) +
   ylab("Precision (Coefficient of Quartile Variation)")+
   geom_point(size=3)+
@@ -1910,11 +1910,12 @@ CQV<-ggplot(summary_stats,aes(y=CQV,x=E,color=factor(I),group=interaction(I,para
   geom_line()+
   theme(strip.text = element_text(size = 14))
 
-bias<-ggplot(summary_stats,aes(y=abs(bias),x=E,color=factor(I),group=interaction(I,parameter)))+
-  facet_wrap(~parameter,scales="free",nrow=2)+
+bias<-ggplot(summary_stats,aes(y=bias,x=E,color=factor(I),group=interaction(I,parameter)))+
+  facet_wrap(~parameter,nrow=2)+ #scales="free"
   scale_y_continuous(labels = scales::percent_format()) +
-  ylab("Bias (Absolute % Error Relative to Full Dataset)")+
+  ylab("Bias (% Error Relative to Full Dataset)")+
   geom_point(size=3)+
+  geom_hline(yintercept = 0)+
   labs(color = "Interview and Index \nEffort Count Days")+
   xlab("Census Effort Count Flights")+
   geom_line()+
