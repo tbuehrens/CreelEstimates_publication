@@ -1906,22 +1906,48 @@ CQV<-ggplot(summary_stats,aes(y=CQV,x=E,color=factor(I),group=interaction(I,para
   scale_y_continuous(labels = scales::percent_format(),limits = c(0,NA)) +
   ylab("Precision (Coefficient of Quartile Variation)")+
   geom_point(size=3)+
+  geom_bar(aes(stat="identity"))+
   xlab("")+
   geom_line()+
   labs(color = "Interview and Index \nEffort Count Days")+
   theme(strip.text = element_text(size = 14))#+
   #guides(color = "none")
 
+CVQ2<-ggplot(summary_stats, aes_string(y = "CQV", x = "E", fill = "factor(I)", group = "interaction(I, parameter)")) +
+  facet_wrap(~parameter, ncol = 2) +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0, NA)) +
+  ylab("Precision (Coefficient of Quartile Variation)") +
+  geom_bar(stat = "identity", position = "dodge",width=0.5) +  # Separate bars by "parameter"
+  xlab("") +
+  labs(fill = "Interview and Index \nEffort Count Days") +  # Changed from color to fill for bars
+  theme(strip.text = element_text(size = 14))
+
+
+
 bias<-ggplot(summary_stats,aes(y=bias,x=E,color=factor(I),group=interaction(I,parameter)))+
   facet_wrap(~parameter,ncol=2)+ #scales="free"
   scale_y_continuous(labels = scales::percent_format()) +
   ylab("Bias (% Error Relative to Full Dataset)")+
+  geom_bar()+
   geom_point(size=3)+
   geom_hline(yintercept = 0)+
   labs(color = "Interview and Index \nEffort Count Days")+
   xlab("Census Effort Count Flights")+
   geom_line()+
   theme(strip.text = element_text(size = 14))
+
+
+bias2<-ggplot(summary_stats, aes_string(y = "bias", x = "E", fill = "factor(I)", group = "interaction(I, parameter)")) +
+  facet_wrap(~parameter, ncol = 2) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  ylab("Bias (% Error Relative to Full Dataset)")+
+  geom_bar(stat = "identity", position = "dodge",width=0.5) +  # Separate bars by "parameter"
+  xlab("Census Effort Count Flights")+
+  labs(fill = "Interview and Index \nEffort Count Days") +  # Changed from color to fill for bars
+  theme(strip.text = element_text(size = 14))+
+  geom_text(aes(label=if_else(bias==0,"NA",""),color=factor(I)),hjust=1,show.legend = F)
+  
+
 
 
 power_plt<-patchwork::wrap_plots(
@@ -1940,16 +1966,38 @@ power_plt<-patchwork::wrap_plots(
                     close=")"
                     )
     )+
-  plot_layout(nrow = 2) #+  # Set the number of columns in the layout
-  # #plot_layout(widths = c(3, 3),
-  #             heights = c(6, 6)
-  #             )
+  plot_layout(nrow = 2) 
 
+
+power_plt2<-patchwork::wrap_plots(
+    tag_facet(CVQ2, 
+              x =Inf, 
+              y = Inf,
+              tag_pool = c("a","b"),
+              hjust = 1.5,
+              open="(",
+              close=")"
+              ),
+    tag_facet(bias2, x =Inf, y = Inf,
+              tag_pool = c("c","d"),
+                    hjust = 1.5,
+                    open="(",
+                    close=")"
+                    )
+    )+
+  plot_layout(nrow = 2) 
 
 
 
 ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name),"power_plt.png"),
        plot = power_plt,
+       width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
+       scale=1.75,
+       units = c("in")
+       )
+
+ggsave(filename=file.path(here("fishery_analyses", params$project_name, params$fishery_name),"power_plt2.png"),
+       plot = power_plt2,
        width = 6.5, height = 6.5, dpi = 300, limitsize = TRUE,
        scale=1.75,
        units = c("in")
