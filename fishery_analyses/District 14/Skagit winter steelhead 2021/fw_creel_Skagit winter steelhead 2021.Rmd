@@ -1808,7 +1808,7 @@ for(i in 1: 2){ #loop through interview and index effort data 100% = 1, 50% = 2
     if(j==1){
       E="_E_ALL"
       if(i==1 & j==1){
-        #next
+        next
       }
     }
     if(j==2){
@@ -1889,7 +1889,7 @@ summary_stats <- bind_rows(summary_stats)%>%
   mutate(CQV = (`0.75`-`0.25`)/(`0.75` + `0.25`))%>%
   arrange(parameter,I,desc(E))%>%
   ungroup()%>%
-  group_by(parameter) %>%
+  group_by(parameter)%>%
   mutate(bias = ifelse(parameter=="C_sum",`0.50` / .$`0.50`[.$I == "all" & .$E == 5 & .$parameter=="C_sum"] - 1,NA),
          bias = ifelse(parameter=="E_sum" & is.na(bias),`0.50` / .$`0.50`[.$I == "all" & .$E == 5 & .$parameter=="E_sum"] -1,bias)
   )%>%
