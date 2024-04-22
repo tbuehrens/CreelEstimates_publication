@@ -1902,16 +1902,18 @@ print(summary_stats)
 
 
 CQV<-ggplot(summary_stats,aes(y=CQV,x=E,color=factor(I),group=interaction(I,parameter)))+
-  facet_wrap(~parameter,nrow=2)+ # scales="free"
+  facet_wrap(~parameter,ncol=2)+ # scales="free"
   scale_y_continuous(labels = scales::percent_format(),limits = c(0,NA)) +
   ylab("Precision (Coefficient of Quartile Variation)")+
   geom_point(size=3)+
-  xlab("Census Effort Count Flights")+
+  xlab("")+
   geom_line()+
-  theme(strip.text = element_text(size = 14))
+  labs(color = "Interview and Index \nEffort Count Days")+
+  theme(strip.text = element_text(size = 14))#+
+  #guides(color = "none")
 
 bias<-ggplot(summary_stats,aes(y=bias,x=E,color=factor(I),group=interaction(I,parameter)))+
-  facet_wrap(~parameter,nrow=2)+ #scales="free"
+  facet_wrap(~parameter,ncol=2)+ #scales="free"
   scale_y_continuous(labels = scales::percent_format()) +
   ylab("Bias (% Error Relative to Full Dataset)")+
   geom_point(size=3)+
@@ -1923,22 +1925,22 @@ bias<-ggplot(summary_stats,aes(y=bias,x=E,color=factor(I),group=interaction(I,pa
 
 
 power_plt<-patchwork::wrap_plots(
-    tag_facet(CQV+ guides(color = "none") , 
+    tag_facet(CQV, 
               x =Inf, 
               y = Inf,
-              tag_pool = c("a","c"),
+              tag_pool = c("a","b"),
               hjust = 1.5,
               open="(",
               close=")"
               ),
     tag_facet(bias, x =Inf, y = Inf,
-              tag_pool = c("b","d"),
+              tag_pool = c("c","d"),
                     hjust = 1.5,
                     open="(",
                     close=")"
                     )
     )+
-  plot_layout(ncol = 2) #+  # Set the number of columns in the layout
+  plot_layout(nrow = 2) #+  # Set the number of columns in the layout
   # #plot_layout(widths = c(3, 3),
   #             heights = c(6, 6)
   #             )
