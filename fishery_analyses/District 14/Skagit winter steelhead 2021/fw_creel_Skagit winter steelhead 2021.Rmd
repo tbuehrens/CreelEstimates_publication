@@ -1897,7 +1897,7 @@ summary_stats <- bind_rows(summary_stats)%>%
 
 
 # Print the combined tibble
-print(summary_stats)
+write.csv(summary_stats,file.path(here("fishery_analyses", params$project_name, params$fishery_name),"sensitivity_summary_stats.csv"),row.names = F)
 
 
 
