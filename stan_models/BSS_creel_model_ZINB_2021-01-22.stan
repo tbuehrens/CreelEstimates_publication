@@ -208,11 +208,11 @@ model{
   for (a in 1:IntC) {
     if (c[a] == 0) {
       target += log_sum_exp(
-        bernoulli_lpmf(0 | pzero[gear_IntC[a], section_IntC[a]]), // probability 0 extra zero
-        bernoulli_lpmf(1 | pzero[gear_IntC[a], section_IntC[a]]) + neg_binomial_2_lpmf(0 | lambda_C_S[section_IntC[a]][day_IntC[a], gear_IntC[a]] * h[a], r_C) // probability of 0 but from the neg bim distribution (not extra)
+        bernoulli_lpmf(0 | 1-pzero[gear_IntC[a], section_IntC[a]]), // probability 0 extra zero
+        bernoulli_lpmf(1 | 1-pzero[gear_IntC[a], section_IntC[a]]) + neg_binomial_2_lpmf(0 | lambda_C_S[section_IntC[a]][day_IntC[a], gear_IntC[a]] * h[a], r_C) // probability of 0 but from the neg bim distribution (not extra)
       );
     } else {
-      target += bernoulli_lpmf(1 | pzero[gear_IntC[a], section_IntC[a]]) + neg_binomial_2_lpmf(c[a] | lambda_C_S[section_IntC[a]][day_IntC[a], gear_IntC[a]] * h[a], r_C); // probability of nonzero
+      target += bernoulli_lpmf(1 | 1-pzero[gear_IntC[a], section_IntC[a]]) + neg_binomial_2_lpmf(c[a] | lambda_C_S[section_IntC[a]][day_IntC[a], gear_IntC[a]] * h[a], r_C); // probability of nonzero
     }
   }
 	//Angler interviews - Angler expansions
