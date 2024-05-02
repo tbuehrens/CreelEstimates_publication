@@ -15,7 +15,8 @@ effort_locs<-read_csv(here::here("input_files/creel_location_master_skagit_winte
 
 fishing_bounds<-read_csv(here::here("input_files/creel_location_master_skagit_winter_steelhead_2021.csv"))%>%
   filter(location_type=="mgmt section upstream point")%>%
-  bind_rows(tibble("longitude" = -121.771535, "latitude" =  48.524704, "water_body" = "Skagit River",  "location" ="Dalles Bridge" ))%>%
+  mutate(location="Upstream")%>%
+  bind_rows(tibble("longitude" = -121.771535, "latitude" =  48.524704, "water_body" = "Skagit River",  "location" ="Downstream" ))%>%
   st_as_sf(coords = c("longitude", "latitude"), crs = 4326)
 
 # Download map data for Washington state
@@ -36,23 +37,33 @@ wa_rivers <- get_nhdplus(
 
 
 Rivers <-wa_rivers%>%
-  filter(gnis_name %in% c("Skagit River","Sauk River","Suiattle River"))%>%
-  st_union()
+  filter(gnis_name %in% c("Skagit River","Sauk River","Suiattle River"))
  
+
+
+custom_colors <- c(
+  "Skagit River" = "#26557f",#336699",
+  "Sauk River" = "#4d8eb7",
+  "Suiattle River" = "#73b7e0"
+)
+
 
 
 # Create the main map
 study_area <- ggplot() + 
   #geom_sf(data = wa_map, fill = "lightgray", color = "black") + # Washington state map
-  geom_sf(data = Rivers, color = "blue", size = 1.5) +
-  geom_sf(data = effort_locs, aes(color = factor(water_body)),size=3) +
-  geom_sf(data = fishing_bounds, color = "black",size=5, shape="X") +
+  geom_sf(data = Rivers, aes(color = factor(gnis_name)), lwd = 1.25) +
+  scale_color_manual(values = custom_colors)+
+  #scale_color_brewer(palette = "Blues")+
+  geom_sf_label(data = fishing_bounds, aes(label = location), size = 3, color = "black", fontface = "bold", fill = NA, label.size = 0)+
+  geom_sf(data = effort_locs, aes(fill = factor(water_body)),color="black",size=3,shape=21) +
+  #geom_sf(data = fishing_bounds, color = "black",size=7, shape="X") +
   #scale_color_viridis_d() +
   coord_sf(xlim = c(-121.787749, -121.3840383), ylim = c(48.525218, 48.25)) + # Set map extent by lat and long
   theme_bw() + # Minimal theme
   ylab(NULL) +
   xlab(NULL)+
-  labs(color=NULL,shape=NULL)+
+  labs(color=NULL,shape=NULL, fill=NULL)+
   theme(legend.position = "top")+
   ggspatial::annotation_scale() +  # Add scale bar with kilometers
   ggspatial::annotation_north_arrow(location = "br", which_north = "true") 
