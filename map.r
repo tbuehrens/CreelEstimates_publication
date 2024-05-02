@@ -26,22 +26,19 @@ wa_map <- ne_states(country = 'United States of America', returnclass = 'sf') %>
 area <- sf::st_as_sfc(sf::st_bbox(c(xmin = -121.787749, xmax = -121.384038,
                                     ymax = 48.525218, ymin = 48.25), crs = 4326))
 
-Rivers <- get_nhdplus(
-  area,
-  realization = "flowline",
-  streamorder = NULL
-  ) %>%
-  st_zm() %>%
-  filter(gnis_name %in% c("Skagit River","Sauk River","Suiattle River")) %>%
-  st_transform( crs = st_crs(4326))%>%
-  st_union()
-
-
 wa_rivers <- get_nhdplus(
   wa_map,
   realization = "flowline",
   streamorder = 4
-)
+)%>%mutate(
+  gnis_name=ifelse(comid==24265513,"Sauk River",gnis_name)
+)%>%st_transform( crs = st_crs(4326))
+
+
+Rivers <-wa_rivers%>%
+  filter(gnis_name %in% c("Skagit River","Sauk River","Suiattle River"))
+ 
+
 
 # Create the main map
 study_area <- ggplot() + 
