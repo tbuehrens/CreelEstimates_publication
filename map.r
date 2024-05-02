@@ -49,7 +49,7 @@ study_area <- ggplot() +
   geom_sf(data = Rivers, color = "blue", size = 1.5) +
   geom_sf(data = effort_locs, aes(color = factor(water_body)),size=3) +
   geom_sf(data = fishing_bounds, color = "black",size=5, shape="X") +
-  scale_color_viridis_d() +
+  #scale_color_viridis_d() +
   coord_sf(xlim = c(-121.787749, -121.3840383), ylim = c(48.525218, 48.25)) + # Set map extent by lat and long
   theme_bw() + # Minimal theme
   ylab(NULL) +
