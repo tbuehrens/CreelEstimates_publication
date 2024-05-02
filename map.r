@@ -37,6 +37,11 @@ wa_rivers <- get_nhdplus(
 
 
 Rivers <-wa_rivers%>%
+  filter(gnis_name %in% c("Skagit River","Sauk River","Suiattle River"))#%>%
+  # group_by(gnis_name)%>%
+  # summarise()
+
+Rivers_smooth <-wa_rivers%>%
   filter(gnis_name %in% c("Skagit River","Sauk River","Suiattle River"))%>%
   group_by(gnis_name)%>%
   summarise()
@@ -54,8 +59,18 @@ custom_colors <- c(
 # Create the main map
 study_area <- ggplot() + 
   #geom_sf(data = wa_map, fill = "lightgray", color = "black") + # Washington state map
-  geom_sf(data = Rivers, aes(color = factor(gnis_name)), lwd = 1.25) +
-  scale_color_manual(values = custom_colors)+
+  geom_sf(data = Rivers_smooth, aes(color = factor(gnis_name)), lwd = 1.25,fill=NA,show.legend = F) +
+  geom_sf(data = Rivers, aes(color = factor(gnis_name)), lwd = 1.25,fill=NA) +
+  scale_color_manual(values = custom_colors,
+                     guide = guide_legend(
+                       override.aes = list(fill = NA),  # Remove fill from legend
+                       title = "River Legend",
+                       label = c("Skagit River", "Sauk River", "Suiattle River"),
+                       keywidth = unit(1, "cm"),  # Adjust key width for lines
+                       keyheight = unit(0.5, "cm"),  # Adjust key height for lines
+                       direction = "horizontal"  # Display keys horizontally
+                       )
+                     )+
   #scale_color_brewer(palette = "Blues")+
   geom_sf_label(data = fishing_bounds, aes(label = location), size = 3, color = "black", fontface = "bold", fill = NA, label.size = 0)+
   geom_sf(data = effort_locs, aes(fill = factor(water_body)),color="black",size=3,shape=21) +
@@ -68,8 +83,9 @@ study_area <- ggplot() +
   labs(color=NULL,shape=NULL, fill=NULL)+
   theme(legend.position = "top")+
   ggspatial::annotation_scale() +  # Add scale bar with kilometers
-  ggspatial::annotation_north_arrow(location = "br", which_north = "true") 
-
+  ggspatial::annotation_north_arrow(location = "br", which_north = "true")+ 
+  guides(color = guide_legend(override.aes = list(color = custom_colors)))  # Manually override legend appearance
+ 
 
   
 
