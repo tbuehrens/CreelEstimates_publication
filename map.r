@@ -37,7 +37,9 @@ wa_rivers <- get_nhdplus(
 
 
 Rivers <-wa_rivers%>%
-  filter(gnis_name %in% c("Skagit River","Sauk River","Suiattle River"))
+  filter(gnis_name %in% c("Skagit River","Sauk River","Suiattle River"))%>%
+  group_by(gnis_name)%>%
+  summarise()
  
 
 
