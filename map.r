@@ -5,6 +5,7 @@ library(sf)
 library(tidyverse)
 library(nhdplusTools)
 library(patchwork)
+library(ggspatial)
 
 
 #load 2021 Skagit fishery points
@@ -23,7 +24,7 @@ wa_map <- ne_states(country = 'United States of America', returnclass = 'sf') %>
 
 # Get NHD Plus Flowlines
 area <- sf::st_as_sfc(sf::st_bbox(c(xmin = -121.787749, xmax = -121.384038,
-                                    ymax = 48.525218, ymin = 48.246599), crs = 4326))
+                                    ymax = 48.525218, ymin = 48.25), crs = 4326))
 
 Rivers <- get_nhdplus(
   area,
@@ -49,12 +50,16 @@ study_area <- ggplot() +
   geom_sf(data = effort_locs, aes(color = factor(water_body)),size=3) +
   geom_sf(data = fishing_bounds, color = "black",size=5, shape="X") +
   scale_color_viridis_d() +
-  coord_sf(xlim = c(-121.787749, -121.3840383), ylim = c(48.525218, 48.246599)) + # Set map extent by lat and long
+  coord_sf(xlim = c(-121.787749, -121.3840383), ylim = c(48.525218, 48.25)) + # Set map extent by lat and long
   theme_bw() + # Minimal theme
   ylab(NULL) +
   xlab(NULL)+
   labs(color=NULL,shape=NULL)+
-  theme(legend.position = "top")
+  theme(legend.position = "top")+
+  ggspatial::annotation_scale() +  # Add scale bar with kilometers
+  ggspatial::annotation_north_arrow(location = "br", which_north = "true") 
+
+
   
 
 # Create the inset map
