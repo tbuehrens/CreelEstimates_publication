@@ -281,7 +281,7 @@ generated quantities{
 	// 	c_rep[a] = neg_binomial_2_rng(lambda_C_S[section_IntC[a]][day_IntC[a], gear_IntC[a]] * h[a] , r_C);
 	// }
 	for (a in 1:IntC) {
-	  extra_0[a] = bernoulli_rng(pzero[gear_IntC[a],section_IntC[a]]);
+	  extra_0[a] = bernoulli_rng(1-pzero[gear_IntC[a],section_IntC[a]]);
     if(extra_0[a] == 0)
       c_rep[a] = 0;
     else
