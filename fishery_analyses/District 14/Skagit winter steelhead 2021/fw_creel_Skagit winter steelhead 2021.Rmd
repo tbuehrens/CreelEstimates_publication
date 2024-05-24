@@ -1500,7 +1500,9 @@ season_results<-data.frame(res$C_sum,res$E_sum)%>%
   as_tibble()%>%
   rename(`Season Total Catch`=res.C_sum,`Season Total Effort`=res.E_sum)%>%
   mutate(`Seasonal Mean CPUE` = `Season Total Catch`/`Season Total Effort`)%>%
-  pivot_longer(names_to = "Parameter",values_to="value",cols=c(`Season Total Catch`,`Season Total Effort`,`Seasonal Mean CPUE`))%>%
+  pivot_longer(names_to = "Parameter",values_to="value",cols=c(`Season Total Catch`,`Season Total Effort`,`Seasonal Mean CPUE`))
+
+season_results_table<-season_results%>%
   group_by(Parameter)%>%
   summarise(mean=mean(value), 
             sd=sd(value),
@@ -1512,7 +1514,9 @@ season_results<-data.frame(res$C_sum,res$E_sum)%>%
   bind_rows(catch_gear_section)%>%
   bind_rows(effort_gear_section)%>%
   bind_rows(median_CPUE_gear_section)%>%
-  select(Parameter,section,gear,mean,sd,`2.5%`,`25%`,`50%`,`75%`,`97.5%`)%>%
+  select(Parameter,section,gear,mean,sd,`2.5%`,`25%`,`50%`,`75%`,`97.5%`)
+
+season_results_table%>%
   write.csv(file.path(here("fishery_analyses", params$project_name, params$fishery_name),"total_effort_catch_tbl.csv"),row.names = F)
 
 
@@ -1520,50 +1524,61 @@ season_results<-data.frame(res$C_sum,res$E_sum)%>%
 
 
 ```{r, include=TRUE, fig.align="center", fig.cap=c("Figure 5. Season total catch (fish) and effort (angler hours). The middle dashed line shows the posterior median or 'best' estimate. Outer dashed lines show 95 percent credible intervals."),echo=FALSE,warning = FALSE}
-total_catch_plt <- ggplot(season_results %>% 
-                             filter(Parameter == "Season Total Catch")
-                           , aes(x = value, fill = Parameter)
+total_catch_plt <- ggplot(season_results%>%
+                            filter(Parameter=="Season Total Catch")
+                           , aes(x = value,fill=Parameter)
                            )+
   theme_bw() +
   geom_density(aes(y=..density.. / max(..density..)))+
   ylab("Relative \nProbability") +
-  xlab("Fish") +
-  geom_vline(data = season_results %>%
+  xlab("Catch (Fish)") +
+  geom_vline(data = season_results_table %>%
                filter(Parameter == "Season Total Catch")%>%
-               summarise(value = quantile(value, c(0.025, 0.5, 0.975))),
+               ungroup()%>%
+               dplyr::select(`2.5%`,`50%`,`97.5%`)%>%
+               pivot_longer(cols = everything(),names_to = "quantile"),
+               #summarise(value = quantile(value, c(0.025, 0.5, 0.975))),
              aes(xintercept = value),
              linetype = "dashed") +
-  theme(legend.title = element_blank())
+  theme(legend.title = element_blank())+
+  guides(fill="none")
 
-total_effort_plt <- ggplot(season_results %>% 
-                             filter(Parameter == "Season Total Effort")
-                           , aes(x = value, fill = Parameter)
+total_effort_plt <- ggplot(season_results%>%
+                            filter(Parameter=="Season Total Effort")
+                           , aes(x = value,fill=Parameter)
                            )+
   theme_bw() +
   geom_density(aes(y=..density.. / max(..density..)))+
   ylab("Relative \nProbability") +
-  xlab("Angler Hours") +
-  geom_vline(data = season_results %>%
+  xlab("Effort (Angler Hours)") +
+  geom_vline(data = season_results_table %>%
                filter(Parameter == "Season Total Effort")%>%
-               summarise(value = quantile(value, c(0.025, 0.5, 0.975))),
+               ungroup()%>%
+               dplyr::select(`2.5%`,`50%`,`97.5%`)%>%
+               pivot_longer(cols = everything(),names_to = "quantile"),
+               #summarise(value = quantile(value, c(0.025, 0.5, 0.975))),
              aes(xintercept = value),
              linetype = "dashed") +
-  theme(legend.title = element_blank())
+  theme(legend.title = element_blank())+
+  guides(fill="none")
 
 total_CPUE_plt <- ggplot(season_results %>% 
-                             filter(Parameter == "Seasonal CPUE")
+                             filter(Parameter == "Seasonal Mean CPUE")
                            , aes(x = value, fill = Parameter)
                            )+
   theme_bw() +
   geom_density(aes(y=..density.. / max(..density..)))+
   ylab("Relative \nProbability")+
-  xlab("Fish/Hour") +
-  geom_vline(data = season_results %>%
-               filter(Parameter == "Seasonal CPUE")%>%
-               summarise(value = quantile(value, c(0.025, 0.5, 0.975))),
+  xlab("CPUE (Fish/Hour)") +
+  geom_vline(data = season_results_table %>%
+               filter(Parameter == "Seasonal Mean CPUE")%>%
+               ungroup()%>%
+               dplyr::select(`2.5%`,`50%`,`97.5%`)%>%
+               pivot_longer(cols = everything(),names_to = "quantile"),
              aes(xintercept = value),
              linetype = "dashed") +
-  theme(legend.title = element_blank())
+  theme(legend.title = element_blank())+
+  guides(fill="none")
 
 # Print the plots
 total_plt<-gridExtra::grid.arrange(
